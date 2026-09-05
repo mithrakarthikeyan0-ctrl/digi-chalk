@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Digi-Chalk — Teacher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../templates/style.css" />
+<style>
+  .bookmark-fab {
+    position: absolute; top: 28px; right: 28px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--color-amber); border: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-raised);
+  }
+  .bookmark-list { list-style: none; margin: 10px 0 0; padding: 0; font-size: 12px; color: var(--text-secondary); }
+  .bookmark-list li { padding: 4px 0; border-bottom: 1px dashed var(--color-slate-light); }
+  .bookmark-list li:first-child { color: var(--color-indigo); font-weight: 600; }
+</style>
+</head>
+<body data-nav-current="home">
+<div class="app-shell" data-loaded="false">
+
+  <div class="topbar">
+    <div>
+      <!-- INTEGRATION: class name — replace with GET /api/sessions/current -> session.classId (resolved to a label) -->
+      <h1 style="font-size:20px;">Class 8B &middot; Maths</h1>
+      <p class="role-label">Today&rsquo;s session</p>
+    </div>
+    <div class="avatar">MR</div>
+  </div>
+
+  <div class="main">
+
+    <!-- skeleton state -->
+    <div class="skeleton-block">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card mt-16" style="height:170px;"></div>
+      <div class="skeleton skeleton-card mt-16" style="height:150px;"></div>
+    </div>
+
+    <!-- real content -->
+    <div class="real-content">
+
+      <button class="btn-huge" id="sessionBtn" aria-live="polite">
+        <span class="icon-circle" style="background:rgba(251,248,242,0.2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="9,6 20,12 9,18"/></svg>
+        </span>
+        <span style="text-align:left;">
+          <span class="label-main">Start session</span>
+          <span class="label-sub">One tap to record and broadcast</span>
+        </span>
+      </button>
+
+      <div class="board-window mt-16" style="position:relative;">
+        <div class="board-status">
+          <span class="rec-dot" id="recDot"></span>
+          <span>Session &middot; <span id="sessionTimer">0:00</span></span>
+          <span style="margin-left:auto; color:#94A3B8;">Board replay</span>
+        </div>
+        <canvas data-board-canvas height="170" style="height:170px;"></canvas>
+        <!-- INTEGRATION: live viewer count — replace with GET /api/sessions/current/viewers -->
+        <p class="caption" style="color:#94A3B8; margin-top:8px;">26 students watching</p>
+
+        <button class="bookmark-fab" id="bookmarkBtn" aria-label="Bookmark this moment as exam-important">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#FBF8F2"><path d="M6 3h12v18l-6-4-6 4Z"/></svg>
+        </button>
+      </div>
+      <p class="caption mt-8">Bookmark an exam-important moment &mdash; double-tap the chalk holder, or tap the amber flag above.</p>
+      <ul class="bookmark-list" id="bookmarkList"></ul>
+
+      <a href="board.html?role=teacher" class="caption" style="color:var(--color-emerald-dark); font-weight:600;">Open full board (landscape) &rarr;</a>
+
+      <div class="card mt-16">
+        <div class="card-title">
+          <h2>Test scores</h2>
+          <a class="card-link" href="#">View all</a>
+        </div>
+        <!-- INTEGRATION: GET /api/scores/{classId} — see data contract "Teacher.scores.*" -->
+        <div id="scoreRows"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <nav class="bottomnav">
+    <a href="teacher.html" data-nav="home" class="active">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+      Home
+    </a>
+    <a href="#" data-nav="sessions">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
+      Sessions
+    </a>
+    <a href="#" data-nav="scores">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="12" width="3" height="8"/><rect x="10.5" y="7" width="3" height="13"/><rect x="16" y="15" width="3" height="5"/></svg>
+      Scores
+    </a>
+    <a href="#" data-nav="profile">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      Profile
+    </a>
+  </nav>
+</div>
+
+<script src="../templates/script.js"></script>
+<script src="../templates/components/live-board.js"></script>
+<script src="../templates/components/scores.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var shell = document.querySelector(".app-shell");
+
+    simulateLoad(shell, function () {
+      initSessionButton(
+        document.getElementById("sessionBtn"),
+        document.getElementById("sessionTimer"),
+        function onStart() { document.getElementById("recDot").classList.add("live"); },
+        function onStop() { document.getElementById("recDot").classList.remove("live"); }
+      );
+      initBookmarkButton(
+        document.getElementById("bookmarkBtn"),
+        document.getElementById("sessionTimer"),
+        document.getElementById("bookmarkList")
+      );
+
+      /* INTEGRATION: replace this static array with the GET /api/scores/{classId} response */
+      var scoreRows = document.getElementById("scoreRows");
+      renderScoreRow(scoreRows, { label: "Algebra basics", value: 78, meta: "24 opted in" });
+      renderScoreRow(scoreRows, { label: "Fractions quiz", value: 58, meta: "19 opted in" });
+      renderScoreRow(scoreRows, { label: "Geometry basics", value: 34, meta: "8 opted in" });
+
+      var viewAllLink = document.querySelector(".card-link");
+      if (viewAllLink) {
+        viewAllLink.addEventListener("click", function (e) {
+          e.preventDefault();
+          var rosterHtml = '<div class="caption mb-8">All Term 1 unit assessments for Class 8B:</div>' +
+            '<div class="card mt-8" style="padding:12px;">' +
+              '<div class="row-between"><span style="font-weight:600; font-size:13px;">Algebra basics</span><span class="badge badge-good">78%</span></div>' +
+              '<div class="row-between mt-8"><span class="caption">24 of 26 students completed</span><span class="caption">Avg time: 14m</span></div>' +
+            '</div>' +
+            '<div class="card mt-8" style="padding:12px;">' +
+              '<div class="row-between"><span style="font-weight:600; font-size:13px;">Fractions quiz</span><span class="badge badge-warn">58%</span></div>' +
+              '<div class="row-between mt-8"><span class="caption">19 of 26 students completed</span><span class="caption">Avg time: 18m</span></div>' +
+            '</div>' +
+            '<div class="card mt-8" style="padding:12px;">' +
+              '<div class="row-between"><span style="font-weight:600; font-size:13px;">Geometry basics</span><span class="badge badge-low">34%</span></div>' +
+              '<div class="row-between mt-8"><span class="caption">8 of 26 students completed</span><span class="caption">Needs revision</span></div>' +
+            '</div>' +
+            '<div class="card mt-8" style="padding:12px;">' +
+              '<div class="row-between"><span style="font-weight:600; font-size:13px;">Number systems (Pre-test)</span><span class="badge badge-good">84%</span></div>' +
+              '<div class="row-between mt-8"><span class="caption">26 of 26 students completed</span><span class="caption">Mastered</span></div>' +
+            '</div>';
+          openModal("Class 8B &middot; All Test Scores", rosterHtml);
+        });
+      }
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Digi-Chalk — Student</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../templates/style.css" />
+<style>
+  .lesson-thumb {
+    width: 64px; height: 48px; border-radius: 8px;
+    background: var(--board-bg); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--chalk-mint);
+  }
+  .lesson-card { display: flex; gap: 12px; text-decoration: none; color: inherit; }
+  .quiz-condenser-row { display: flex; gap: 12px; }
+  .quiz-condenser-row .card { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  #condenserPlay {
+    border: none; background: var(--color-amber); width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: #FBF8F2; flex-shrink: 0;
+    cursor: pointer; transition: transform 0.1s ease, background 0.15s ease;
+  }
+  #condenserPlay:hover { transform: scale(1.05); }
+</style>
+</head>
+<body data-nav-current="home">
+<div class="app-shell" data-loaded="false">
+
+  <div class="topbar">
+    <!-- INTEGRATION: student's display name — replace with GET /api/students/{id}/profile -->
+    <div>
+      <div class="caption">Class 8B &middot; Roll No. 14</div>
+      <h1 style="font-size:20px;">Hi, Aditi</h1>
+    </div>
+    <div class="avatar" aria-label="Student profile avatar">A</div>
+  </div>
+
+  <div class="main">
+
+    <div class="skeleton-block" aria-hidden="true">
+      <div class="skeleton" style="height:30px; width:60%;"></div>
+      <div class="skeleton skeleton-card mt-16"></div>
+      <div class="skeleton skeleton-card mt-16"></div>
+      <div class="skeleton skeleton-card mt-16" style="height:60px;"></div>
+    </div>
+
+    <div class="real-content">
+
+      <!-- INTEGRATION: GET /api/students/{id}/classes -> classes[] -->
+      <div class="chip-row" id="classChips" role="tablist" aria-label="Filter lessons by subject">
+        <button type="button" class="chip" data-value="maths" aria-pressed="true" role="tab">Maths</button>
+        <button type="button" class="chip" data-value="science" aria-pressed="false" role="tab">Science</button>
+        <button type="button" class="chip" data-value="english" aria-pressed="false" role="tab">English</button>
+        <button type="button" class="chip" data-value="social" aria-pressed="false" role="tab">Social studies</button>
+      </div>
+
+      <!-- Low-Bandwidth Mode Control -->
+      <div class="card row-between">
+        <div class="row" style="gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-slate)" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <div>
+            <div style="font-weight:700; font-size:13px;">Low-bandwidth mode</div>
+            <div class="caption">Vector strokes only, audio muted (saves 90% data)</div>
+          </div>
+        </div>
+        <label class="switch" title="Toggle low-bandwidth mode">
+          <!-- INTEGRATION: reflects/sets Student.audioEnabled (inverted).
+               Backend/CDN will provide low-bandwidth media variants (e.g. lightweight vector strokes, audio-off). -->
+          <input type="checkbox" id="lowBandwidthToggle" />
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+
+      <div id="lowBandwidthBanner" class="card" style="display:none; background:#FEF3C7; border-color:#F59E0B; padding:10px 14px; gap:8px; align-items:center;">
+        <span class="rec-dot" style="background:#D97706;"></span>
+        <span style="font-size:12px; font-weight:600; color:#92400E;">2G/Low-Data Mode Active: Audio muted to save 90% bandwidth. High-efficiency chalk strokes only.</span>
+      </div>
+
+      <!-- Lesson Card: Today's Classroom Board -->
+      <div class="card">
+        <div class="card-title">
+          <h2 id="lessonTitle">Fractions &mdash; chapter 4</h2>
+          <span class="badge badge-good" id="lessonStatusBadge">Recorded Today</span>
+        </div>
+        <a class="lesson-card" href="replay.html" aria-label="Open whiteboard replay for Fractions chapter 4">
+          <div class="lesson-thumb" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          </div>
+          <div style="flex:1;">
+            <div class="caption" id="lessonMeta">48 min &middot; Maths</div>
+            <div id="lowDataBadge" class="low-data-tag" style="display:none;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><line x1="23" y1="9" x2="17" y2="15"/></svg>
+              Low-data: Vector chalk only
+            </div>
+            <div class="bar-track mt-8" style="position:relative;" id="lessonBookmarkTrack">
+              <div class="bar-fill good" style="width:40%;"></div>
+              <span class="bookmark-dot" style="left:62%;" title="Teacher bookmark at 30 min"></span>
+              <span class="bookmark-dot" style="left:81%;" title="Teacher bookmark at 39 min"></span>
+            </div>
+            <div class="caption mt-8">Amber dots mark the teacher&rsquo;s bookmarks &middot; Tap to replay</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- AI Quiz & Condenser Cards -->
+      <div class="quiz-condenser-row">
+        <div class="card" style="background:var(--color-indigo); border-color:var(--color-indigo);">
+          <div>
+            <h2 style="color:#FBF8F2; font-size:15px;">AI quiz</h2>
+            <p class="caption" id="quizSubtitle" style="color:#CBD5C9;">5 questions from today&rsquo;s board</p>
+          </div>
+          <a href="quiz.html" class="btn btn-primary btn-block mt-16">Start quiz</a>
+        </div>
+        <div class="card">
+          <div>
+            <h2 style="font-size:15px;">Recap reel</h2>
+            <p class="caption">50 min class in 30 seconds</p>
+          </div>
+          <div class="row mt-16" style="gap:10px;">
+            <button type="button" id="condenserPlay" data-condenser-play aria-label="Play recap">
+              <svg width="14" height="14" viewBox="0 0 24 28" fill="currentColor"><polygon points="8,6 20,14 8,22"></polygon></svg>
+            </button>
+            <div style="flex:1;">
+              <div class="bar-track" aria-hidden="true"><div class="bar-fill good" data-condenser-progress style="width:0%;"></div></div>
+              <div class="caption mt-8" data-condenser-time>0:00 / 0:28</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Lesson Card (Shows live available or offline state) -->
+      <!-- INTEGRATION: Student.liveSession.isLive (boolean) from WebSocket or GET /api/students/{id}/live-status -->
+      <div id="liveLessonContainer">
+        <!-- Live available state -->
+        <div id="liveSessionCard" class="card" style="background:var(--color-crimson); border-color:var(--color-crimson); display:flex; align-items:center; gap:12px;">
+          <span class="rec-dot live" style="background:#FBF8F2;" aria-hidden="true"></span>
+          <span style="flex:1;">
+            <span style="display:block; font-weight:700; font-size:13px; color:#FBF8F2;" id="liveSessionTitle">Live now &mdash; Class 8B Maths</span>
+            <span class="caption" style="color:#FEE2E2;">Chalkboard stream &middot; Opens in landscape view</span>
+          </span>
+          <a href="board.html?role=student" class="btn" style="background:#FBF8F2; color:var(--color-crimson); padding:8px 16px; flex-shrink:0;">Join live board</a>
+        </div>
+
+        <!-- Offline / unavailable state -->
+        <div id="offlineSessionCard" class="card" style="display:none; border:1px dashed var(--color-slate); background:var(--paper-dim); padding:14px 16px;">
+          <div class="row-between">
+            <div class="row" style="gap:8px;">
+              <span class="rec-dot" style="background:var(--color-slate);" aria-hidden="true"></span>
+              <span style="font-weight:700; font-size:13px; color:var(--text-secondary);">No Live Board Active</span>
+            </div>
+            <span class="badge" style="background:var(--color-slate-light); color:var(--color-slate);">Offline</span>
+          </div>
+          <p class="caption mt-8">Your next live board broadcast is scheduled for tomorrow at 9:00 AM (Class 8B Science).</p>
+        </div>
+
+        <div class="row-between mt-8" style="padding:0 2px;">
+          <span class="caption" id="liveStatusHelper">Broadcast status: Live</span>
+          <button type="button" id="toggleLiveDemoBtn" class="caption" style="background:none; border:none; color:var(--color-slate); text-decoration:underline; cursor:pointer;" aria-label="Toggle demo live session availability">Demo: simulate offline</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <nav class="bottomnav" aria-label="Main navigation">
+    <a href="student.html" data-nav="home" class="active" aria-current="page">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+      Home
+    </a>
+    <a href="quiz.html" data-nav="quizzes">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1 .9-1 1.6"/><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none"/></svg>
+      Quizzes
+    </a>
+    <a href="#" data-nav="reels">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="5" width="18" height="14" rx="2"/><polygon points="10,9 10,15 15,12" fill="currentColor" stroke="none"/></svg>
+      Reels
+    </a>
+    <a href="#" data-nav="profile">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      Profile
+    </a>
+  </nav>
+</div>
+
+<script src="../templates/script.js"></script>
+<script src="../templates/components/condenser.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var shell = document.querySelector(".app-shell");
+    simulateLoad(shell, function () {
+      /* INTEGRATION: GET /api/lessons?classId=8B — returns lesson details, condenser reel, and quiz preview */
+      var lessonData = {
+        maths: {
+          title: "Fractions — chapter 4",
+          time: "48 min · Maths",
+          reelSec: 28,
+          quizSubtitle: "5 questions from today's board",
+          bookmarks: [62, 81]
+        },
+        science: {
+          title: "Photosynthesis & Leaf Structure",
+          time: "42 min · Science",
+          reelSec: 25,
+          quizSubtitle: "4 questions on chloroplasts & light",
+          bookmarks: [35, 75]
+        },
+        english: {
+          title: "Direct & Indirect Speech",
+          time: "35 min · English",
+          reelSec: 20,
+          quizSubtitle: "5 questions on narration rules",
+          bookmarks: [45, 80]
+        },
+        social: {
+          title: "The Indian Constitution & Rights",
+          time: "50 min · Social studies",
+          reelSec: 30,
+          quizSubtitle: "5 questions on Fundamental Rights",
+          bookmarks: [30, 65]
+        }
+      };
+
+      var lessonTitleEl = document.getElementById("lessonTitle");
+      var lessonMetaEl = document.getElementById("lessonMeta");
+      var quizSubtitleEl = document.getElementById("quizSubtitle");
+      var condenserCard = document.querySelector(".quiz-condenser-row .card:last-child");
+      var bookmarkTrackEl = document.getElementById("lessonBookmarkTrack");
+
+      initCondenser(condenserCard);
+
+      bindChipRow(document.getElementById("classChips"), function (value) {
+        /* INTEGRATION: fetch latest lesson and recap for the selected subject */
+        var data = lessonData[value] || lessonData.maths;
+        if (lessonTitleEl) lessonTitleEl.textContent = data.title;
+        if (lessonMetaEl) lessonMetaEl.textContent = data.time;
+        if (quizSubtitleEl) quizSubtitleEl.textContent = data.quizSubtitle;
+
+        if (bookmarkTrackEl && data.bookmarks) {
+          bookmarkTrackEl.innerHTML = '<div class="bar-fill good" style="width:40%;"></div>' +
+            '<span class="bookmark-dot" style="left:' + data.bookmarks[0] + '%;"></span>' +
+            '<span class="bookmark-dot" style="left:' + data.bookmarks[1] + '%;"></span>';
+        }
+
+        updateCondenserReel(condenserCard, data.reelSec);
+        announce(value + " subject selected. " + data.title);
+      });
+
+      var lowBandwidthBanner = document.getElementById("lowBandwidthBanner");
+      var lowDataBadge = document.getElementById("lowDataBadge");
+      bindSwitch(document.getElementById("lowBandwidthToggle"), function (isOn) {
+        /* INTEGRATION: In production, backend CDN provides lower-bitrate stream or SVG strokes only.
+           PATCH /api/students/profile { audioEnabled: !isOn } */
+        if (lowBandwidthBanner) {
+          lowBandwidthBanner.style.display = isOn ? "flex" : "none";
+        }
+        if (lowDataBadge) {
+          lowDataBadge.style.display = isOn ? "inline-flex" : "none";
+        }
+        announce(isOn ? "Low-bandwidth mode on: audio muted, vector strokes only" : "Low-bandwidth mode off");
+      });
+
+      // Live Session Demo Availability Toggle
+      var liveSessionCard = document.getElementById("liveSessionCard");
+      var offlineSessionCard = document.getElementById("offlineSessionCard");
+      var liveStatusHelper = document.getElementById("liveStatusHelper");
+      var toggleLiveDemoBtn = document.getElementById("toggleLiveDemoBtn");
+      var isLiveSessionActive = true;
+
+      if (toggleLiveDemoBtn) {
+        toggleLiveDemoBtn.addEventListener("click", function () {
+          isLiveSessionActive = !isLiveSessionActive;
+          if (isLiveSessionActive) {
+            liveSessionCard.style.display = "flex";
+            offlineSessionCard.style.display = "none";
+            liveStatusHelper.textContent = "Broadcast status: Live";
+            toggleLiveDemoBtn.textContent = "Demo: simulate offline";
+            announce("Live session available: Class 8B Maths");
+          } else {
+            liveSessionCard.style.display = "none";
+            offlineSessionCard.style.display = "block";
+            liveStatusHelper.textContent = "Broadcast status: Offline";
+            toggleLiveDemoBtn.textContent = "Demo: simulate live";
+            announce("No live session currently active. Offline state displayed.");
+          }
+        });
+      }
+    });
+  });
+</script>
+</body>
+</html>

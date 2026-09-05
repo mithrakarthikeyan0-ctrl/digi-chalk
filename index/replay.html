@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Digi-Chalk — Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../templates/style.css" />
+<style>
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 20px 20px 0; font-size: 12px;
+    color: var(--text-secondary); font-weight: 600;
+  }
+  .back-link:hover { color: var(--color-indigo); }
+  .scrubber { position: relative; height: 12px; margin: 16px 4px 8px; }
+  .scrubber .bar-track { height: 8px; cursor: pointer; border-radius: 4px; }
+  .scrubber .bookmark-dot { top: 0px; cursor: pointer; transition: transform 0.1s ease; }
+  .scrubber .bookmark-dot:hover { transform: scale(1.4); }
+  .play-controls { display: flex; align-items: center; gap: 14px; }
+  #replayPlay {
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: var(--color-emerald); color: #FBF8F2;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    cursor: pointer; transition: transform 0.08s ease, background 0.15s ease;
+  }
+  #replayPlay:hover { transform: scale(1.05); }
+  .bookmark-pill {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; text-align: left;
+    padding: 10px 14px; border-radius: var(--radius-card);
+    background: var(--paper-2); border: 1px solid var(--color-slate-light);
+    font-size: 13px; color: var(--text-primary); cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .bookmark-pill:hover, .bookmark-pill:focus-visible {
+    background: #FEF3C7; border-color: var(--color-amber);
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <a class="back-link" href="student.html" aria-label="Return to student portal">&larr; Back to lessons</a>
+
+  <div class="main">
+    <div>
+      <div class="row-between">
+        <span class="badge badge-good">Class 8B &middot; Maths</span>
+        <span class="caption">Synced Telemetry</span>
+      </div>
+      <h1 style="font-size:22px; margin-top:6px;">Fractions &mdash; chapter 4</h1>
+      <p class="caption">Replay vector chalkboard strokes synced with teacher audio</p>
+    </div>
+
+    <!-- Chalkboard Canvas Window -->
+    <div class="board-window mt-8" role="region" aria-label="Chalkboard replay display">
+      <div class="board-status">
+        <span class="rec-dot live" style="background:var(--chalk-mint);" aria-hidden="true"></span>
+        <span>Chalkboard Replay</span>
+        <span style="margin-left:auto; color:var(--chalk-white); font-weight:600;" id="replayClock">0:00 / 48:00</span>
+      </div>
+      <!-- INTEGRATION: driven by board.strokes[] up to the current scrub position from GET /api/lessons/{lessonId}/replay -->
+      <canvas data-board-canvas height="180" style="height:180px;" aria-label="Whiteboard stroke drawing canvas"></canvas>
+    </div>
+
+    <!-- Scrubber and Timeline -->
+    <div class="scrubber" id="scrubberRoot">
+      <div class="bar-track" id="scrubTrack" tabindex="0" role="slider" aria-label="Replay scrubber" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00 of 48:00">
+        <div class="bar-fill good" id="scrubFill" style="width:0%;"></div>
+      </div>
+      <div class="scrub-thumb" id="scrubThumb" style="left:0%;"></div>
+      <!-- INTEGRATION: positions come from replay.bookmarks[] (0-1 values from backend) -->
+      <span class="bookmark-dot" style="left:38%;" data-jump="0.38" title="Bookmarked moment (18:14)" aria-label="Jump to bookmark at 18:14"></span>
+      <span class="bookmark-dot" style="left:66%;" data-jump="0.66" title="Bookmarked moment (31:40)" aria-label="Jump to bookmark at 31:40"></span>
+    </div>
+
+    <!-- Playback Controls Card -->
+    <div class="card">
+      <div class="play-controls">
+        <button type="button" id="replayPlay" aria-label="Play replay">
+          <svg width="16" height="16" viewBox="0 0 24 28" fill="currentColor"><polygon points="8,6 20,14 8,22"></polygon></svg>
+        </button>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:13px;">Full lesson replay</div>
+          <div class="caption">Tap play or scrub timeline to jump through notes</div>
+        </div>
+        <label class="switch" title="Low-bandwidth mode (mute audio, vector strokes only)">
+          <input type="checkbox" id="replayLowBandwidth" />
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+
+      <div id="replayLowDataBanner" class="mt-8" style="display:none;">
+        <span class="low-data-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><line x1="23" y1="9" x2="17" y2="15"/></svg>
+          Low-data active: Audio muted, chalkboard vector strokes only
+        </span>
+      </div>
+    </div>
+
+    <!-- Teacher Bookmarks Quick-Jump List -->
+    <div class="card">
+      <div class="card-title">
+        <h2 style="font-size:15px;">Teacher Bookmarks</h2>
+        <span class="caption">2 key chalkboard topics</span>
+      </div>
+      <p class="caption">Tap any bookmark to jump the whiteboard replay directly to that explanation:</p>
+      <div style="display:flex; flex-direction:column; gap:8px;" class="mt-8">
+        <button type="button" class="bookmark-pill" data-jump="0.38" aria-label="Jump to 18:14 Equivalent Fractions diagram">
+          <span class="bookmark-dot" style="position:static; display:inline-block;" aria-hidden="true"></span>
+          <strong style="color:var(--color-amber);">18:14</strong>
+          <span>&middot; Equivalent fractions chalkboard diagram</span>
+        </button>
+        <button type="button" class="bookmark-pill" data-jump="0.66" aria-label="Jump to 31:40 Simplifying fractions example">
+          <span class="bookmark-dot" style="position:static; display:inline-block;" aria-hidden="true"></span>
+          <strong style="color:var(--color-amber);">31:40</strong>
+          <span>&middot; Simplifying to lowest terms example</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Navigation to Quiz -->
+    <div class="card row-between" style="background:var(--paper-dim);">
+      <div>
+        <div style="font-weight:700; font-size:13px;">Ready to test yourself?</div>
+        <div class="caption">Take the 3-question chalkboard quiz</div>
+      </div>
+      <a href="quiz.html" class="btn btn-primary" style="padding:8px 16px;">Take quiz</a>
+    </div>
+
+  </div>
+</div>
+
+<script src="../templates/script.js"></script>
+<script src="../templates/components/live-board.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    /* INTEGRATION: GET /api/lessons/{lessonId}/replay — returns stroke telemetry, totalDurationSec, and bookmarks[] */
+    var totalSeconds = 48 * 60;
+    var elapsed = 0;
+    var playing = false;
+    var intervalId = null;
+    var fill = document.getElementById("scrubFill");
+    var thumb = document.getElementById("scrubThumb");
+    var clock = document.getElementById("replayClock");
+    var playBtn = document.getElementById("replayPlay");
+    var track = document.getElementById("scrubTrack");
+    var canvas = document.querySelector("[data-board-canvas]");
+    var replayLowDataBanner = document.getElementById("replayLowDataBanner");
+
+    var playSvg = '<svg width="16" height="16" viewBox="0 0 24 28" fill="currentColor"><polygon points="8,6 20,14 8,22"></polygon></svg>';
+    var pauseSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"></rect><rect x="14" y="5" width="4" height="14"></rect></svg>';
+
+    function render() {
+      var frac = elapsed / totalSeconds;
+      var pct = frac * 100;
+      fill.style.width = pct + "%";
+      if (thumb) thumb.style.left = pct + "%";
+      clock.textContent = formatDuration(elapsed) + " / " + formatDuration(totalSeconds);
+      if (track) {
+        track.setAttribute("aria-valuenow", Math.round(pct));
+        track.setAttribute("aria-valuetext", formatDuration(elapsed) + " of " + formatDuration(totalSeconds));
+      }
+      if (canvas && typeof drawBoardStrokesProgressive === "function") {
+        drawBoardStrokesProgressive(canvas, STROKE_DEMO, frac);
+      }
+    }
+
+    function setElapsedFromFraction(frac) {
+      frac = Math.max(0, Math.min(1, frac));
+      elapsed = Math.round(totalSeconds * frac);
+      render();
+
+      /* INTEGRATION: POST /api/students/{id}/progress { lessonId: "fractions-ch4", progress: frac }
+         Stores student playback position on the backend so they can resume later. */
+    }
+
+    playBtn.addEventListener("click", function () {
+      playing = !playing;
+      playBtn.setAttribute("aria-label", playing ? "Pause replay" : "Play replay");
+      playBtn.innerHTML = playing ? pauseSvg : playSvg;
+
+      if (playing) {
+        /* INTEGRATION: replace fake progress tick with real <video>/<audio> playback + timeupdate */
+        intervalId = window.setInterval(function () {
+          elapsed = Math.min(elapsed + 5, totalSeconds);
+          render();
+          if (elapsed >= totalSeconds) {
+            playing = false;
+            window.clearInterval(intervalId);
+            playBtn.setAttribute("aria-label", "Play replay");
+            playBtn.innerHTML = playSvg;
+            announce("Lesson replay finished");
+          }
+        }, 500);
+        announce("Replay playing");
+      } else {
+        window.clearInterval(intervalId);
+        announce("Replay paused");
+      }
+    });
+
+    // Mouse and Touch Scrubbing
+    var isDragging = false;
+    function scrubEvent(e) {
+      var rect = track.getBoundingClientRect();
+      var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      setElapsedFromFraction((clientX - rect.left) / rect.width);
+    }
+
+    track.addEventListener("click", scrubEvent);
+
+    track.addEventListener("mousedown", function (e) {
+      isDragging = true;
+      scrubEvent(e);
+    });
+    window.addEventListener("mousemove", function (e) {
+      if (isDragging) scrubEvent(e);
+    });
+    window.addEventListener("mouseup", function () {
+      isDragging = false;
+    });
+
+    track.addEventListener("touchstart", function (e) {
+      isDragging = true;
+      scrubEvent(e);
+    }, { passive: true });
+    window.addEventListener("touchmove", function (e) {
+      if (isDragging) scrubEvent(e);
+    }, { passive: true });
+    window.addEventListener("touchend", function () {
+      isDragging = false;
+    });
+
+    // Keyboard controls for scrubber
+    track.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        elapsed = Math.min(elapsed + 15, totalSeconds);
+        render();
+        announce("Forward 15 seconds to " + formatDuration(elapsed));
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        elapsed = Math.max(elapsed - 15, 0);
+        render();
+        announce("Rewound 15 seconds to " + formatDuration(elapsed));
+      } else if (e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        playBtn.click();
+      }
+    });
+
+    // Interactive bookmark jumps (both timeline dots and list pills)
+    document.querySelectorAll("[data-jump]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var jumpFrac = parseFloat(el.dataset.jump);
+        setElapsedFromFraction(jumpFrac);
+        announce("Jumped to bookmark at " + formatDuration(elapsed));
+      });
+    });
+
+    bindSwitch(document.getElementById("replayLowBandwidth"), function (isOn) {
+      /* INTEGRATION: In production, backend CDN drops audio track or switches to low-bitrate stream.
+         PATCH /api/students/{id}/replay-settings { audioEnabled: !isOn } */
+      if (replayLowDataBanner) {
+        replayLowDataBanner.style.display = isOn ? "block" : "none";
+      }
+      announce(isOn ? "Low-bandwidth mode on: audio muted, vector strokes only" : "Low-bandwidth mode off");
+    });
+
+    render();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Digi-Chalk — Live board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../templates/style.css" />
+<style>
+  html, body { height: 100%; background: var(--board-bg); }
+  body.board-page { display: block; }
+  .board-full {
+    position: fixed; inset: 0; background: var(--board-bg);
+    display: flex; flex-direction: column;
+  }
+  .board-full canvas { flex: 1; width: 100%; height: 100%; display: block; }
+  .board-topbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; z-index: 5;
+  }
+  .board-pill { display:flex; align-items:center; gap:8px; background: rgba(15,23,42,0.55); color:#F1F5F9; padding:6px 12px; border-radius: var(--radius-pill); font-size:11px; }
+  .board-controls { position: absolute; bottom: 18px; right: 18px; display: flex; gap: 12px; z-index: 5; }
+  .board-icon-btn {
+    width: 46px; height: 46px; border-radius: 50%; border: none;
+    background: rgba(15,23,42,0.6); color: #F1F5F9;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .board-icon-btn.amber { background: var(--color-amber); color: #1E293B; }
+  .rotate-guard p { max-width: 220px; margin: 0; font-size: 13px; }
+</style>
+</head>
+<body class="board-page" data-nav-current="">
+
+  <div class="rotate-guard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#FBF8F2" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+    <p>Rotate your device to landscape to view the live board.</p>
+  </div>
+
+  <div class="board-full">
+    <div class="board-topbar">
+      <a href="#" class="board-pill" id="leaveBoard">&larr; Leave</a>
+      <span class="board-pill"><span class="rec-dot live" style="background:#EF4444;"></span> Live &middot; <span id="boardTimer">0:00</span></span>
+    </div>
+
+    <!-- INTEGRATION: this canvas should stream board.strokes[] over a
+         WebSocket, one stroke segment at a time, instead of the static
+         demo path drawn by drawBoardStrokes() -->
+    <canvas data-board-canvas></canvas>
+
+    <div class="board-controls" id="teacherControls" style="display:none; align-items:center; gap:10px;">
+      <div class="chalk-palette" id="chalkPalette">
+        <button type="button" class="chalk-btn chalk-white is-active" data-color="#F1F5F9" aria-label="White chalk" title="White chalk"></button>
+        <button type="button" class="chalk-btn chalk-yellow" data-color="#FCD34D" aria-label="Yellow chalk" title="Yellow chalk"></button>
+        <button type="button" class="chalk-btn chalk-mint" data-color="#6EE7B7" aria-label="Mint chalk" title="Mint chalk"></button>
+      </div>
+      <button class="board-icon-btn" id="boardClearBtn" aria-label="Clear board" title="Clear board">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+      <button class="board-icon-btn amber" id="boardBookmarkBtn" aria-label="Bookmark this moment" title="Bookmark exam moment">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v18l-6-4-6 4Z"/></svg>
+      </button>
+    </div>
+    <div class="board-controls" id="studentControls" style="display:none;">
+      <button class="board-icon-btn" id="boardMuteBtn" aria-label="Toggle audio">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
+    </div>
+  </div>
+
+<script src="../templates/script.js"></script>
+<script src="../templates/components/live-board.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    tryLockLandscape();
+
+    var role = new URLSearchParams(window.location.search).get("role") || "student";
+    var backTarget = role === "teacher" ? "teacher.html" : "student.html";
+    document.getElementById("leaveBoard").href = backTarget;
+
+    var canvas = document.querySelector("[data-board-canvas]");
+
+    if (role === "teacher") {
+      document.getElementById("teacherControls").style.display = "flex";
+      initBookmarkButton(document.getElementById("boardBookmarkBtn"), document.getElementById("boardTimer"), null);
+
+      var activeChalkColor = "#F1F5F9";
+      var chalkBtns = document.querySelectorAll(".chalk-btn");
+      chalkBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          chalkBtns.forEach(function (b) { b.classList.remove("is-active"); });
+          btn.classList.add("is-active");
+          activeChalkColor = btn.getAttribute("data-color");
+          announce(btn.getAttribute("aria-label") + " selected");
+        });
+      });
+
+      var clearBtn = document.getElementById("boardClearBtn");
+      if (clearBtn && canvas) {
+        clearBtn.addEventListener("click", function () {
+          var ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          announce("Board cleared");
+        });
+      }
+
+      if (canvas && typeof enableBoardDrawing === "function") {
+        enableBoardDrawing(canvas, function () { return activeChalkColor; });
+      }
+    } else {
+      document.getElementById("studentControls").style.display = "flex";
+      var muted = false;
+      var muteBtn = document.getElementById("boardMuteBtn");
+      muteBtn.addEventListener("click", function () {
+        muted = !muted;
+        /* INTEGRATION: PATCH Student.audioEnabled = !muted for this live session */
+        muteBtn.innerHTML = muted
+          ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+          : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+        muteBtn.setAttribute("aria-label", muted ? "Unmute audio" : "Mute audio");
+        announce(muted ? "Audio muted" : "Audio on");
+      });
+    }
+
+    var seconds = 0;
+    window.setInterval(function () {
+      seconds += 1;
+      document.getElementById("boardTimer").textContent = formatDuration(seconds);
+    }, 1000);
+  });
+</script>
+</body>
+</html>

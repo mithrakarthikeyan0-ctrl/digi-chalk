@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Digi-Chalk — Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../templates/style.css" />
+<style>
+  .quiz-option {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; text-align: left;
+    padding: 14px 16px; margin-bottom: 10px;
+    border: 1px solid var(--color-slate-light); border-radius: 12px;
+    background: var(--paper-2); font-family: inherit; font-size: 14px; color: var(--text-primary);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .quiz-option:hover { background: #F8FAFC; border-color: var(--color-slate); }
+  .quiz-option[aria-pressed="true"] {
+    border-color: var(--color-indigo); background: #EEF2F6; font-weight: 600;
+  }
+  .quiz-opt-letter {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--paper-dim); color: var(--color-indigo);
+    font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .quiz-option[aria-pressed="true"] .quiz-opt-letter {
+    background: var(--color-indigo); color: #FBF8F2;
+  }
+  .quiz-opt-text { flex: 1; }
+  .quiz-error { color: var(--color-crimson); font-size: 13px; font-weight: 600; min-height: 20px; margin-bottom: 8px; }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; padding: 20px 20px 0; font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+  .back-link:hover { color: var(--color-indigo); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <a class="back-link" href="student.html" aria-label="Return to student portal">&larr; Back to lessons</a>
+
+  <div class="main" id="quizRoot" data-loaded="true">
+    <div style="margin-bottom: 8px;">
+      <div class="row-between">
+        <span class="badge" style="background:#E2E8F0; color:var(--color-indigo);">Maths &middot; Fractions</span>
+        <span class="caption" data-quiz-count-badge>1 of 3</span>
+      </div>
+      <h1 style="font-size:22px; margin-top:6px;">Chalkboard Practice Quiz</h1>
+      <p class="caption" data-quiz-progress>Question 1 of 3</p>
+      <div class="quiz-progress-bar" aria-hidden="true">
+        <div class="quiz-progress-fill" data-quiz-progress-bar style="width:33.3%;"></div>
+      </div>
+    </div>
+
+    <!-- Question container: one question visible at a time -->
+    <div data-quiz-body>
+      <div class="card mt-16" role="region" aria-label="Current question">
+        <h2 style="font-size:16px; line-height:1.4;" data-quiz-prompt>Loading question...</h2>
+        <div class="mt-16" data-quiz-options role="group" aria-label="Answer options"></div>
+      </div>
+      <p class="quiz-error mt-8" data-quiz-error role="alert" aria-live="polite"></p>
+      <button class="btn btn-primary btn-block" data-quiz-next>Next question</button>
+    </div>
+
+    <!-- Results view -->
+    <div data-quiz-result style="display:none; text-align:center; padding-top:24px;">
+      <div class="icon-circle" style="width:64px; height:64px; margin:0 auto; background:#D1FAE5; color:var(--color-emerald);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <p class="caption mt-8">Your Quiz Score</p>
+      <p style="font-size:42px; font-weight:800; color:var(--color-emerald); margin:4px 0;" data-quiz-score></p>
+      <p style="font-size:14px; font-weight:600; max-width:280px; margin:0 auto;" data-quiz-verdict></p>
+
+      <div data-quiz-breakdown></div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:24px; max-width:260px; margin-left:auto; margin-right:auto;">
+        <button type="button" class="btn btn-outline btn-block" data-quiz-retake>Retake quiz</button>
+        <a href="replay.html" class="btn btn-outline btn-block">Review board replay</a>
+        <a href="student.html" class="btn btn-primary btn-block">Back to lessons</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../templates/script.js"></script>
+<script src="../templates/components/quiz.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    initQuiz(document.getElementById("quizRoot"));
+  });
+</script>
+</body>
+</html>

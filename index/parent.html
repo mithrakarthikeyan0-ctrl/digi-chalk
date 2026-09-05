@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Digi-Chalk — Parent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../templates/style.css" />
+<style>
+  .child-switcher { display: flex; gap: 10px; }
+  .child-pill {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: var(--radius-pill);
+    border: 1px solid var(--color-slate-light); background: transparent;
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  }
+  .child-pill[aria-pressed="true"] { background: var(--color-indigo); border-color: var(--color-indigo); color: #FBF8F2; }
+  .child-pill .dot { width: 22px; height: 22px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; background: var(--color-slate-light); color: var(--text-primary); flex-shrink:0; }
+  .child-pill[aria-pressed="true"] .dot { background: var(--color-emerald); color: #FBF8F2; }
+  .score-hero { background: var(--color-emerald); border-color: var(--color-emerald); color: #FBF8F2; }
+  .score-hero .caption { color: #D1FAE5; }
+  .msg-bubble { background: var(--paper-dim); border-radius: 12px; padding: 10px 12px; font-size: 11px; }
+</style>
+</head>
+<body data-nav-current="home">
+<div class="app-shell" data-loaded="false">
+
+  <div class="topbar">
+    <h1 style="font-size:20px;">Your children</h1>
+  </div>
+
+  <div class="main">
+
+    <div class="skeleton-block">
+      <div class="skeleton" style="height:36px;"></div>
+      <div class="skeleton skeleton-card mt-16" style="height:120px;"></div>
+      <div class="skeleton skeleton-card mt-16" style="height:110px;"></div>
+    </div>
+
+    <div class="real-content">
+
+      <!-- INTEGRATION: GET /api/parents/{id} -> children[], activeChildId -->
+      <div class="child-switcher" id="childSwitcher">
+        <button class="child-pill" data-value="aditi" aria-pressed="true"><span class="dot">A</span>Aditi &middot; 8B</button>
+        <button class="child-pill" data-value="rohan" aria-pressed="false"><span class="dot">R</span>Rohan &middot; 5A</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <h2>Today&rsquo;s summary</h2>
+          <!-- INTEGRATION: summary.language (ISO code) drives this label -->
+          <span class="badge" style="background:var(--color-indigo); color:#FBF8F2;">&#2980;&#2990;&#3007;&#2996;&#3021;</span>
+        </div>
+        <!-- INTEGRATION: summary.text — backend-translated lesson notes for the active child -->
+        <p style="color:var(--text-secondary);">
+          Today Aditi covered fractions: writing them as decimals and simplifying to lowest terms.
+          She completed the in-class quiz and marked two teacher bookmarks for revision.
+        </p>
+      </div>
+
+      <div class="row" style="gap:12px; align-items:stretch;">
+        <div class="card score-hero" style="flex:1;">
+          <p class="caption">Maths &mdash; unit test</p>
+          <!-- INTEGRATION: weekly.averageScore or latest test score, read-only -->
+          <p style="font-size:28px; font-weight:700; margin-top:8px;">82<span style="font-size:13px; font-weight:400;">/100</span></p>
+          <p class="caption mt-8">Up 6 pts from last test</p>
+        </div>
+        <div class="card" style="flex:1;">
+          <h2 style="font-size:13px;">All test scores</h2>
+          <p class="caption">Read-only view</p>
+          <div id="parentScoreRows" class="mt-16"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size:14px;">Progress alerts</h2>
+        <p class="caption">Sent automatically, no login needed</p>
+        <div class="row mt-16" style="gap:10px; align-items:flex-start;">
+          <div class="msg-bubble" style="flex:1;">
+            <!-- INTEGRATION: notification.text, most recent entry -->
+            Aditi completed &ldquo;Fractions&rdquo; quiz &mdash; scored 4/5.
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div class="caption" style="color:var(--color-emerald-dark); font-weight:700;">WhatsApp</div>
+            <div class="caption">2:14 pm</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <nav class="bottomnav">
+    <a href="parent.html" data-nav="home" class="active">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+      Home
+    </a>
+    <a href="#" data-nav="scores">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="12" width="3" height="8"/><rect x="10.5" y="7" width="3" height="13"/><rect x="16" y="15" width="3" height="5"/></svg>
+      Scores
+    </a>
+    <a href="#" data-nav="messages">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1Z"/></svg>
+      Messages
+    </a>
+    <a href="#" data-nav="profile">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      Profile
+    </a>
+  </nav>
+</div>
+
+<script src="../templates/script.js"></script>
+<script src="../templates/components/scores.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var shell = document.querySelector(".app-shell");
+    simulateLoad(shell, function () {
+      var switcher = document.getElementById("childSwitcher");
+      var summaryText = document.querySelector(".card p[style*='text-secondary']");
+      var langBadge = document.querySelector(".card-title .badge");
+      var scoreHeroVal = document.querySelector(".score-hero p[style*='font-size:28px']");
+      var scoreHeroTitle = document.querySelector(".score-hero .caption:first-child");
+      var scoreHeroDelta = document.querySelector(".score-hero .caption:last-child");
+      var msgBubble = document.querySelector(".msg-bubble");
+      var msgTime = document.querySelector(".card .caption:last-child");
+      var rows = document.getElementById("parentScoreRows");
+
+      var currentChild = "aditi";
+      var currentLang = "ta"; // Tamil by default per existing template
+
+      if (langBadge) {
+        langBadge.style.cursor = "pointer";
+        langBadge.title = "Tap to switch English / தமிழ்";
+        langBadge.addEventListener("click", function () {
+          currentLang = currentLang === "ta" ? "en" : "ta";
+          langBadge.textContent = currentLang === "ta" ? "தமிழ்" : "English";
+          updateChildView(currentChild);
+          announce("Language switched to " + (currentLang === "ta" ? "Tamil" : "English"));
+        });
+      }
+
+      function updateChildView(childKey) {
+        currentChild = childKey;
+        var data = PARENT_CHILDREN_DEMO[childKey] || PARENT_CHILDREN_DEMO.aditi;
+        
+        if (summaryText) {
+          summaryText.textContent = currentLang === "ta" ? data.summaryTa : data.summaryEn;
+        }
+        if (scoreHeroTitle) {
+          scoreHeroTitle.textContent = data.subject + " — unit test";
+        }
+        if (scoreHeroVal) {
+          scoreHeroVal.innerHTML = data.unitTestScore + '<span style="font-size:13px; font-weight:400;">/100</span>';
+        }
+        if (scoreHeroDelta) {
+          scoreHeroDelta.textContent = data.scoreDelta;
+        }
+        if (msgBubble) {
+          msgBubble.textContent = data.recentAlert;
+        }
+        if (msgTime && data.alertTime) {
+          msgTime.textContent = data.alertTime;
+        }
+
+        if (rows) {
+          rows.innerHTML = "";
+          data.scores.forEach(function (s) {
+            renderScoreRow(rows, s);
+          });
+        }
+      }
+
+      switcher.querySelectorAll(".child-pill").forEach(function (pill) {
+        pill.addEventListener("click", function () {
+          switcher.querySelectorAll(".child-pill").forEach(function (p) { p.setAttribute("aria-pressed", "false"); });
+          pill.setAttribute("aria-pressed", "true");
+          var key = pill.getAttribute("data-value") || "aditi";
+          /* INTEGRATION: refetch summary/scores/notifications for children[activeChildId] */
+          updateChildView(key);
+          announce(pill.textContent.trim() + " selected");
+        });
+      });
+
+      // Initial render for default child (Aditi)
+      updateChildView("aditi");
+    });
+  });
+</script>
+</body>
+</html>
