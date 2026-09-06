@@ -1,0 +1,59 @@
+name: Digi-Chalk CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install ruff
+    - name: Lint with Ruff
+      working-directory: ./backend
+      run: |
+        ruff check .
+    - name: Run Backend Tests
+      working-directory: ./backend
+      run: |
+        pytest
+      env:
+        DJANGO_SECRET_KEY: test-secret-key
+        DJANGO_DEBUG: True
+
+  test-gateway:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+    - name: Install dependencies
+      working-directory: ./gateway
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install ruff pytest httpx
+    - name: Lint with Ruff
+      working-directory: ./gateway
+      run: |
+        ruff check .
+    - name: Run Gateway Tests
+      working-directory: ./gateway
+      run: |
+        pytest

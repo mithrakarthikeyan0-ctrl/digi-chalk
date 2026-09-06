@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: digichalk_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: digichalk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: digichalk_api
+    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_DEBUG=True
+      - DJANGO_SECRET_KEY=docker-local-dev-secret-key-replace-in-production
+      - DATABASE_URL=postgres://postgres:postgrespassword@db:5432/digichalk
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,web
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

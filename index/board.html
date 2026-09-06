@@ -69,6 +69,7 @@
     </div>
   </div>
 
+<script src="../templates/api.js"></script>
 <script src="../templates/script.js"></script>
 <script src="../templates/components/live-board.js"></script>
 <script>
@@ -124,10 +125,53 @@
     }
 
     var seconds = 0;
-    window.setInterval(function () {
+    var timerInterval = window.setInterval(function () {
       seconds += 1;
       document.getElementById("boardTimer").textContent = formatDuration(seconds);
     }, 1000);
+
+    // WebSocket Integration
+    var sessionId = new URLSearchParams(window.location.search).get("session_id") || window.currentSessionId;
+    if (sessionId) {
+      // Clear demo strokes
+      var liveStrokes = [];
+      drawBoardStrokes(canvas, liveStrokes);
+      
+      window.boardSocket = new BoardSocket(sessionId, {
+        onStatus: function(status) {
+          console.log("WS Status:", status);
+          if (status === "Connected") {
+            document.querySelector(".rec-dot").classList.add("live");
+          } else {
+            document.querySelector(".rec-dot").classList.remove("live");
+          }
+        },
+        onMessage: function(msg) {
+          if (msg.type === "stroke") {
+            // Reconstruct path from points for simplicity (we're mapping points back to SVG path)
+            if (msg.points && msg.points.length > 0) {
+              var color = msg.points[0].color;
+              var pathStr = "M " + msg.points.map(p => `${p.x} ${p.y}`).join(" L ");
+              liveStrokes.push({ path: pathStr, color: color });
+              drawBoardStrokes(canvas, liveStrokes);
+            }
+          } else if (msg.type === "board_cleared") {
+            liveStrokes = [];
+            drawBoardStrokes(canvas, liveStrokes);
+          }
+        },
+        onError: function(err) {
+          console.error("BoardSocket Error:", err);
+        }
+      });
+      
+      window.addEventListener("beforeunload", function() {
+        if (window.boardSocket) window.boardSocket.disconnect();
+      });
+    } else {
+      // Demo fallback
+      console.log("No session ID found, running in demo mode");
+    }
   });
 </script>
 </body>

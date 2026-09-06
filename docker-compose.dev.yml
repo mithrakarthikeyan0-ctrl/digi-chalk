@@ -1,0 +1,18 @@
+version: '3.8'
+
+# Override for local development (maps code via volumes for live reloading)
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+    command: >
+      bash -c "
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+  gateway:
+    volumes:
+      - ./gateway:/app
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload

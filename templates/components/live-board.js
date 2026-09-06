@@ -114,7 +114,13 @@ function enableBoardDrawing(canvas, getActiveColor) {
     ctx.stroke();
     ctx.restore();
 
-    /* INTEGRATION: emit stroke vector event { x: pos.x, y: pos.y, dt: Date.now(), color: color } to WebSocket */
+    /* INTEGRATION: emit stroke vector event */
+    if (window.boardSocket) {
+        window.boardSocket.send("stroke", {
+            strokeId: "st_" + Date.now() + "_" + Math.floor(Math.random()*1000),
+            points: [{ x: pos.x, y: pos.y, dt: Date.now(), color: color }]
+        });
+    }
 
     lastX = pos.x;
     lastY = pos.y;
@@ -136,66 +142,116 @@ function enableBoardDrawing(canvas, getActiveColor) {
 
 /**
  * Wires the teacher's single-tap "Start session" button.
- * INTEGRATION: on tap, call the session-start endpoint. It should
- * return { sessionId, status } — swap the setInterval timer below
- * for whatever elapsed-time source the backend provides (server
- * timestamp is safer than a client timer once reconnects happen).
  */
 function initSessionButton(buttonEl, timerEl, onStart, onStop) {
   if (!buttonEl) return;
   var recording = false;
   var seconds = 0;
   var intervalId = null;
+  var sessionId = null; // Track current session id
 
-  buttonEl.addEventListener("click", function () {
+  buttonEl.addEventListener("click", async function () {
     recording = !recording;
-    buttonEl.classList.toggle("is-recording", recording);
-    var mainLabel = buttonEl.querySelector(".label-main");
-    var subLabel = buttonEl.querySelector(".label-sub");
+    buttonEl.disabled = true; // prevent double clicks
 
     if (recording) {
-      seconds = 0;
-      mainLabel.textContent = "Recording…";
-      subLabel.textContent = "Tap to end session";
-      intervalId = window.setInterval(function () {
-        seconds += 1;
-        if (timerEl) timerEl.textContent = formatDuration(seconds);
-      }, 1000);
-      announce("Session started");
-      if (typeof onStart === "function") onStart();
+      try {
+        let classId = window.currentClassId;
+        if (!classId) {
+          const classes = await fetchApi("/classes/");
+          if (classes && classes.length > 0) {
+            classId = classes[0].id;
+            window.currentClassId = classId;
+          } else {
+            throw new Error("No classes available to start a session");
+          }
+        }
+        
+        const data = await fetchApi("/sessions/", {
+          method: "POST",
+          body: JSON.stringify({ status: "recording", classroom: classId })
+        });
+        sessionId = data.id;
+        window.currentSessionId = sessionId; // Global reference for bookmarks/board
+
+        buttonEl.classList.add("is-recording");
+        var mainLabel = buttonEl.querySelector(".label-main");
+        var subLabel = buttonEl.querySelector(".label-sub");
+        
+        seconds = 0;
+        mainLabel.textContent = "Recording…";
+        subLabel.textContent = "Tap to end session";
+        intervalId = window.setInterval(function () {
+          seconds += 1;
+          if (timerEl) timerEl.textContent = formatDuration(seconds);
+        }, 1000);
+        announce("Session started");
+        if (typeof onStart === "function") onStart(sessionId);
+      } catch (e) {
+        console.error("Failed to start session:", e);
+        recording = false;
+        announce("Failed to start session");
+      }
     } else {
-      window.clearInterval(intervalId);
-      mainLabel.textContent = "Start session";
-      subLabel.textContent = "One tap to record and broadcast";
-      announce("Session ended");
-      if (typeof onStop === "function") onStop(seconds);
+      try {
+        if (sessionId) {
+          await fetchApi(`/sessions/${sessionId}/end/`, { method: "POST" });
+        }
+        window.clearInterval(intervalId);
+        buttonEl.classList.remove("is-recording");
+        var mainLabel = buttonEl.querySelector(".label-main");
+        var subLabel = buttonEl.querySelector(".label-sub");
+        
+        mainLabel.textContent = "Start session";
+        subLabel.textContent = "One tap to record and broadcast";
+        announce("Session ended");
+        if (typeof onStop === "function") onStop(seconds);
+        window.currentSessionId = null;
+      } catch (e) {
+        console.error("Failed to end session:", e);
+        recording = true; // revert
+      }
     }
+    buttonEl.disabled = false;
   });
 }
 
 /**
- * Wires the amber bookmark button. Tags the current session
- * timestamp as exam-important.
- * INTEGRATION: POST { timestamp, label } to bookmarks endpoint —
- * see data contract "Teacher.bookmarks[]". The physical chalk
- * holder's double-tap gesture should hit the same endpoint;
- * this button is the on-screen equivalent for parity when the
- * hardware isn't paired.
+ * Wires the amber bookmark button.
  */
 function initBookmarkButton(buttonEl, timerEl, listEl) {
   if (!buttonEl) return;
-  buttonEl.addEventListener("click", function () {
-    var stamp = timerEl ? timerEl.textContent : "0:00";
-    if (listEl) {
-      var item = document.createElement("li");
-      item.textContent = "Bookmarked at " + stamp;
-      listEl.prepend(item);
+  buttonEl.addEventListener("click", async function () {
+    if (!window.currentSessionId) {
+      announce("No active session to bookmark");
+      return;
     }
-    announce("Moment bookmarked at " + stamp);
-    buttonEl.animate(
-      [{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
-      { duration: 220 }
-    );
+    
+    var stamp = timerEl ? timerEl.textContent : "0:00";
+    
+    try {
+      const parts = stamp.split(":");
+      const seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      
+      await fetchApi(`/sessions/${window.currentSessionId}/bookmarks/`, {
+        method: "POST",
+        body: JSON.stringify({ timestamp_seconds: seconds, label: `Bookmarked at ${stamp}` })
+      });
+      
+      if (listEl) {
+        var item = document.createElement("li");
+        item.textContent = "Bookmarked at " + stamp;
+        listEl.prepend(item);
+      }
+      announce("Moment bookmarked at " + stamp);
+      buttonEl.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
+        { duration: 220 }
+      );
+    } catch (e) {
+      console.error("Failed to bookmark:", e);
+      announce("Failed to bookmark moment");
+    }
   });
 }
 

@@ -108,19 +108,77 @@ node test-runner.js
 
 ---
 
-## Future Backend Integration Areas
+## System Architecture
 
-All placeholder mock data in the code is explicitly flagged with `INTEGRATION` comments for streamlined backend wiring. Key integration areas include:
+Digi-Chalk consists of three primary components:
+1. **Frontend (HTML/JS/CSS)**: The static web UI, functioning strictly on the client.
+2. **Cloud Backend (Django)**: REST APIs, real-time WebSocket sessions, Early Warning Systems (EWS), quizzes, attendance, and notification dispatching.
+3. **Gateway (FastAPI)**: Local classroom edge server handling hardware synchronization and offline operation for low-bandwidth schools.
 
-1. **Authentication & Session Management**: Role-based authentication (`teacher`, `student`, `parent`, `headmaster`) and session tokens.
-2. **REST API Endpoints**:
-   - `GET /api/students/{id}/classes` — Student enrolled subjects and lesson progress.
-   - `GET /api/lessons/{id}` — Lesson metadata, board strokes, duration, and bookmarks.
-   - `GET /api/quiz/{lessonId}` & `POST /api/quiz/{lessonId}/attempts` — Quiz questions and student attempt score submissions.
-   - `GET /api/schools/{schoolId}/classes` — School performance metrics for headmaster portal.
-   - `GET /api/parents/{id}/children` — Multilingual summaries and attendance digests.
-3. **Live Board WebSockets / SSE**: Real-time vector stroke streaming (`{x, y, dt, color}`) and live session status broadcasts (`Student.liveSession.isLive`).
-4. **Media CDN & Adaptive Bitrate**: Low-bandwidth variants (audio-only, compressed audio, or lightweight vector streams) tied to the low-bandwidth switch.
-5. **Telemetry & Progress Storage**: Periodic sync of student replay playhead positions (`POST /api/students/{id}/progress`).
+---
 
-Consult [HANDOFF.md](HANDOFF.md) for the complete data schema and hardware specifications.
+## Local Development (Docker Compose)
+
+The easiest way to run the full stack locally is with Docker Compose.
+
+### 1. Environment Setup
+Copy the example environment files:
+```bash
+cp backend/.env.example backend/.env
+cp gateway/.env.example gateway/.env
+```
+
+### 2. Start Services
+Run the entire stack in the background:
+```bash
+docker-compose up -d --build
+```
+This starts PostgreSQL, Redis, Backend, Gateway, and a static file server for the frontend.
+
+### 3. Seed Demo Data
+The backend requires a baseline database state. Run the safe seed script to populate a demo school, users, classes, and dummy content:
+```bash
+docker-compose exec backend python manage.py seed_demo_data
+```
+
+### 4. Accessing the Application
+- **Frontend**: http://localhost:5173/index/index.html
+- **Backend API Docs**: http://localhost:8000/api/v1/docs/
+- **Gateway Status**: http://localhost:8001/status/
+
+*Local Frontend Fallback without Docker*: Run `npx live-server . --port=5173` in the repository root.
+
+---
+
+## Testing & CI
+
+Continuous Integration is managed via GitHub Actions. We run Python `pytest` suites and `ruff` linting on both the backend and gateway services.
+
+### Running Backend Tests Locally
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate  # or .\.venv\Scripts\Activate.ps1 on Windows
+pip install -r requirements.txt
+pytest
+```
+
+---
+
+## Production Deployment Guide
+
+### Deployment Checklist
+
+- **Secrets**: Provide secure, random `DJANGO_SECRET_KEY` and `GATEWAY_API_KEY`. DO NOT commit these to version control.
+- **HTTPS**: Run the backend and frontend behind an HTTPS reverse proxy (e.g. Nginx, Traefik, AWS ALB). Enable `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, and `CSRF_COOKIE_SECURE` environment variables.
+- **CORS & Allowed Hosts**: Strictly set `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and `CSRF_TRUSTED_ORIGINS` to the exact production domains.
+- **Database Backup**: Configure automated snapshotting for the PostgreSQL instance. (A local manual backup script is provided at `scripts/backup_db.sh`).
+- **Channel Layer**: Point `REDIS_URL` to a persistent Redis instance for WebSocket routing.
+
+### Data Privacy & Security Limitations
+- **Notifications**: Real providers (SMS/WhatsApp) are disabled by default. Do not enable production credentials unless strict legal data handling consent forms are signed by the school.
+- **Early Warning System (EWS)**: The current models act as proof-of-concept baselines using generic indicators. **Do not use automated output for disciplinary or labeling actions without human review.** EWS must remain strictly as an internal alert pipeline for teachers.
+
+---
+
+Consult [HANDOFF.md](HANDOFF.md) for the data schema and hardware specifications.

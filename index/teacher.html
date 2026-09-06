@@ -105,6 +105,7 @@
   </nav>
 </div>
 
+<script src="../templates/api.js"></script>
 <script src="../templates/script.js"></script>
 <script src="../templates/components/live-board.js"></script>
 <script src="../templates/components/scores.js"></script>
@@ -116,8 +117,20 @@
       initSessionButton(
         document.getElementById("sessionBtn"),
         document.getElementById("sessionTimer"),
-        function onStart() { document.getElementById("recDot").classList.add("live"); },
-        function onStop() { document.getElementById("recDot").classList.remove("live"); }
+        function onStart(sessionId) { 
+          document.getElementById("recDot").classList.add("live"); 
+          window.boardSocket = new BoardSocket(sessionId, {
+            onStatus: (status) => console.log("BoardSocket:", status),
+            onError: (err) => console.error("BoardSocket Error:", err)
+          });
+        },
+        function onStop() { 
+          document.getElementById("recDot").classList.remove("live"); 
+          if (window.boardSocket) {
+            window.boardSocket.disconnect();
+            window.boardSocket = null;
+          }
+        }
       );
       initBookmarkButton(
         document.getElementById("bookmarkBtn"),
