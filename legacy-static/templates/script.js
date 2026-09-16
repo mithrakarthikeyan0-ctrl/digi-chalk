@@ -90,6 +90,48 @@ function announce(message) {
   window.setTimeout(function () { region.textContent = message; }, 50);
 }
 
+/**
+ * Global Toast System for visual feedback.
+ * Types: 'success', 'error', 'info' (default)
+ */
+function showToast(message, type) {
+  type = type || 'info';
+  var container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  var iconSvg = "";
+  if (type === 'success') {
+    iconSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  } else if (type === 'error') {
+    iconSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  } else {
+    iconSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+  }
+
+  var toast = document.createElement("div");
+  toast.className = "toast toast-" + type;
+  toast.innerHTML = '<div class="toast-icon">' + iconSvg + '</div><span>' + message + '</span>';
+  
+  container.appendChild(toast);
+  announce(message); // Ensure screen readers also get it
+  
+  // Trigger reflow to animate in
+  void toast.offsetWidth;
+  toast.classList.add("toast-show");
+  
+  setTimeout(function() {
+    toast.classList.remove("toast-show");
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, 3000);
+}
+
 /** Highlights the current page's bottom-nav item based on data-nav-current on <body>. */
 document.addEventListener("DOMContentLoaded", function () {
   var current = document.body.getAttribute("data-nav-current");
@@ -256,4 +298,138 @@ var PARENT_CHILDREN_DEMO = {
     alertTime: "11:30 am"
   }
 };
+
+/**
+ * LocalStorage wrapper for safe parsing and saving.
+ */
+var LocalDB = {
+  get: function(key, def) {
+    try {
+      var val = localStorage.getItem("digichalk_" + key);
+      return val ? JSON.parse(val) : def;
+    } catch(e) {
+      return def;
+    }
+  },
+  set: function(key, val) {
+    try {
+      localStorage.setItem("digichalk_" + key, JSON.stringify(val));
+    } catch(e) {
+      console.warn("LocalStorage failed", e);
+    }
+  },
+  remove: function(key) {
+    try {
+      localStorage.removeItem("digichalk_" + key);
+    } catch(e) {}
+  },
+  resetAll: function() {
+    var keys = Object.keys(localStorage);
+    keys.forEach(function(k) {
+      if (k.startsWith("digichalk_")) {
+        localStorage.removeItem(k);
+      }
+    });
+  }
+};
+
+/**
+ * Global Topbar Logic: Wires the Search, Notifications, and Profile buttons.
+ */
+function wireGlobalTopbar() {
+  var searchBtn = document.querySelector("[data-global-search]");
+  var notifyBtn = document.querySelector("[data-global-notify]");
+  var profileBtn = document.querySelector("[data-global-profile]");
+
+  if (searchBtn) {
+    searchBtn.addEventListener("click", function() {
+      var html = '<input type="text" placeholder="Search lessons, students, or classes..." class="form-input" style="width:100%; margin-bottom:12px;" autofocus>' +
+                 '<div class="card" style="padding:12px; text-align:center;"><p class="caption">Type to search...</p></div>';
+      openModal("Search", html);
+    });
+  }
+
+  if (notifyBtn) {
+    notifyBtn.addEventListener("click", function() {
+      var notifs = LocalDB.get("notifications", [
+        { id: 1, text: "New assignment: Fractions worksheet", read: false },
+        { id: 2, text: "Class 8B Maths starts in 10 mins", read: false }
+      ]);
+      
+      var html = '<div id="notifList">';
+      if (notifs.length === 0) {
+        html += '<p class="caption" style="text-align:center;">No new notifications</p>';
+      } else {
+        notifs.forEach(function(n) {
+          html += '<div class="card mt-8" style="padding:12px; display:flex; justify-content:space-between; align-items:center;">' +
+                  '<div style="' + (n.read ? 'opacity:0.6;' : 'font-weight:600;') + '">' + n.text + '</div>' +
+                  '<button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="markNotifRead(' + n.id + ')">Dismiss</button>' +
+                  '</div>';
+        });
+      }
+      html += '</div><button class="btn btn-outline btn-block mt-16" onclick="clearNotifs()">Clear all</button>';
+      
+      openModal("Notifications", html);
+    });
+  }
+
+  if (profileBtn) {
+    profileBtn.addEventListener("click", function() {
+      var lang = LocalDB.get("lang", "en");
+      var html = '<div class="card" style="padding:12px;">' +
+                 '<p class="caption mb-8">Preferences</p>' +
+                 '<div class="row-between"><span>Language</span><select class="form-input" style="width:auto; padding:4px 8px;" id="globalLangSelect"><option value="en" ' + (lang==="en"?"selected":"") + '>English</option><option value="ta" ' + (lang==="ta"?"selected":"") + '>தமிழ்</option></select></div>' +
+                 '<div class="row-between mt-16"><span>Text Size</span><button class="btn btn-outline" style="padding:4px 8px;" id="globalTextSizeBtn">Toggle Large Text</button></div>' +
+                 '</div>' +
+                 '<div class="card mt-16" style="padding:12px; border-color:var(--color-crimson);">' +
+                 '<p class="caption mb-8" style="color:var(--color-crimson);">Danger Zone</p>' +
+                 '<button class="btn btn-outline btn-block" style="color:var(--color-crimson); border-color:var(--color-crimson);" id="globalResetBtn">Reset Demo Data</button>' +
+                 '</div>';
+      openModal("Settings & Profile", html);
+      
+      document.getElementById("globalLangSelect").addEventListener("change", function(e) {
+        LocalDB.set("lang", e.target.value);
+        showToast("Language updated to " + e.target.value, "success");
+      });
+      document.getElementById("globalTextSizeBtn").addEventListener("click", function() {
+        var current = document.body.classList.contains("text-large");
+        if (current) document.body.classList.remove("text-large");
+        else document.body.classList.add("text-large");
+        LocalDB.set("textSize", !current);
+        showToast("Text size updated", "success");
+      });
+      document.getElementById("globalResetBtn").addEventListener("click", function() {
+        if (confirm("Are you sure you want to delete all local demo data?")) {
+          LocalDB.resetAll();
+          showToast("Data reset successfully", "success");
+          setTimeout(function() { window.location.reload(); }, 1000);
+        }
+      });
+    });
+  }
+  
+  // Apply saved text size on load
+  if (LocalDB.get("textSize", false)) {
+    document.body.classList.add("text-large");
+  }
+}
+
+// Notification helpers (global so inline onclicks can reach them)
+window.markNotifRead = function(id) {
+  var notifs = LocalDB.get("notifications", [
+    { id: 1, text: "New assignment: Fractions worksheet", read: false },
+    { id: 2, text: "Class 8B Maths starts in 10 mins", read: false }
+  ]);
+  notifs = notifs.map(function(n) { if (n.id === id) n.read = true; return n; });
+  LocalDB.set("notifications", notifs);
+  showToast("Notification dismissed", "info");
+  document.querySelector("[data-global-notify]").click(); // Refresh modal
+};
+window.clearNotifs = function() {
+  LocalDB.set("notifications", []);
+  showToast("All notifications cleared", "info");
+  document.querySelector("[data-global-notify]").click();
+};
+
+document.addEventListener("DOMContentLoaded", wireGlobalTopbar);
 

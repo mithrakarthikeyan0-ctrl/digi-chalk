@@ -34,7 +34,11 @@
       <div class="caption">Class 8B &middot; Roll No. 14</div>
       <h1 style="font-size:20px;">Hi, Aditi</h1>
     </div>
-    <div class="avatar" aria-label="Student profile avatar">A</div>
+    <div class="topbar-actions">
+      <button class="btn-icon" data-global-search aria-label="Search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button class="btn-icon" data-global-notify aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+      <div class="avatar" data-global-profile tabindex="0" role="button" aria-label="Profile and Settings">A</div>
+    </div>
   </div>
 
   <div class="main">
@@ -47,6 +51,30 @@
     </div>
 
     <div class="real-content">
+
+      <!-- PHASE 4: Search & Streak -->
+      <div class="row-between mb-16">
+        <div style="flex:1; margin-right:12px;">
+          <input type="text" class="form-input" id="lessonSearch" placeholder="Search lessons..." style="padding:8px 12px; height:36px;">
+        </div>
+        <div class="badge badge-good" style="display:flex; gap:6px; align-items:center; height:36px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--color-amber)" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span style="font-weight:700;">12 Day Streak</span>
+        </div>
+      </div>
+
+      <!-- PHASE 4: Continue Learning -->
+      <div class="card mb-16" style="background:var(--color-indigo); color:#FBF8F2; border:none;">
+        <div class="caption" style="color:#CBD5C9;">Continue learning</div>
+        <h2 style="font-size:16px; margin:4px 0 12px; color:#FBF8F2;">Science: Ecosystems</h2>
+        <div class="bar-track mb-8" style="background:rgba(255,255,255,0.2);">
+          <div class="bar-fill" style="width:65%; background:#FCD34D;"></div>
+        </div>
+        <div class="row-between">
+          <span class="caption" style="color:#CBD5C9;">24 min left</span>
+          <button class="btn" style="background:#FBF8F2; color:var(--color-indigo); padding:4px 12px; font-size:12px; min-height:auto;">Resume</button>
+        </div>
+      </div>
 
       <!-- INTEGRATION: GET /api/students/{id}/classes -> classes[] -->
       <div class="chip-row" id="classChips" role="tablist" aria-label="Filter lessons by subject">
@@ -83,7 +111,12 @@
       <div class="card">
         <div class="card-title">
           <h2 id="lessonTitle">Fractions &mdash; chapter 4</h2>
-          <span class="badge badge-good" id="lessonStatusBadge">Recorded Today</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span class="badge badge-good" id="lessonStatusBadge">Recorded Today</span>
+            <button class="btn-icon" id="saveLessonBtn" aria-label="Save lesson" style="width:28px; height:28px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            </button>
+          </div>
         </div>
         <a class="lesson-card" href="replay.html" aria-label="Open whiteboard replay for Fractions chapter 4">
           <div class="lesson-thumb" aria-hidden="true">
@@ -159,6 +192,24 @@
         <div class="row-between mt-8" style="padding:0 2px;">
           <span class="caption" id="liveStatusHelper">Broadcast status: Live</span>
           <button type="button" id="toggleLiveDemoBtn" class="caption" style="background:none; border:none; color:var(--color-slate); text-decoration:underline; cursor:pointer;" aria-label="Toggle demo live session availability">Demo: simulate offline</button>
+        </div>
+      </div>
+
+      <!-- PHASE 4: My Notes -->
+      <div class="card mt-16">
+        <h2 style="font-size:14px; margin-bottom:8px;">My Notes</h2>
+        <textarea id="studentNotes" class="form-input" rows="4" placeholder="Type your personal study notes here..."></textarea>
+        <div class="row-between mt-8">
+          <span class="caption" id="notesStatus" style="color:var(--color-emerald-dark);"></span>
+          <button class="btn btn-outline" id="saveNotesBtn" style="padding:4px 12px; min-height:auto; font-size:12px;">Save</button>
+        </div>
+      </div>
+
+      <!-- PHASE 4: Recent Quizzes -->
+      <div class="card mt-16 mb-16">
+        <h2 style="font-size:14px; margin-bottom:12px;">Recent Quizzes</h2>
+        <div id="studentQuizHistory">
+          <p class="caption text-center" style="padding:12px;">No quizzes taken yet.</p>
         </div>
       </div>
 
@@ -259,6 +310,9 @@
         if (lowDataBadge) {
           lowDataBadge.style.display = isOn ? "inline-flex" : "none";
         }
+        if (typeof showToast === "function") {
+          showToast(isOn ? "Low-bandwidth mode on" : "Low-bandwidth mode off", isOn ? "warn" : "info");
+        }
         announce(isOn ? "Low-bandwidth mode on: audio muted, vector strokes only" : "Low-bandwidth mode off");
       });
 
@@ -286,6 +340,50 @@
             announce("No live session currently active. Offline state displayed.");
           }
         });
+      }
+
+      // Phase 4: Save Lesson
+      var saveLessonBtn = document.getElementById("saveLessonBtn");
+      if (saveLessonBtn) {
+        var isSaved = LocalDB.get("lesson_saved_fractions", false);
+        if (isSaved) saveLessonBtn.style.color = "var(--color-emerald)";
+        saveLessonBtn.addEventListener("click", function(e) {
+          e.preventDefault();
+          isSaved = !isSaved;
+          LocalDB.set("lesson_saved_fractions", isSaved);
+          saveLessonBtn.style.color = isSaved ? "var(--color-emerald)" : "";
+          showToast(isSaved ? "Lesson saved to your library" : "Lesson removed", isSaved ? "success" : "info");
+        });
+      }
+
+      // Phase 4: My Notes
+      var notesText = document.getElementById("studentNotes");
+      var notesStatus = document.getElementById("notesStatus");
+      if (notesText) {
+        notesText.value = LocalDB.get("student_notes", "");
+        document.getElementById("saveNotesBtn").addEventListener("click", function() {
+          LocalDB.set("student_notes", notesText.value);
+          notesStatus.textContent = "Saved locally at " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          showToast("Notes saved", "success");
+        });
+      }
+
+      // Phase 4: Quiz History
+      var quizHistoryDiv = document.getElementById("studentQuizHistory");
+      if (quizHistoryDiv) {
+        var history = LocalDB.get("quiz_history", []);
+        if (history.length === 0) {
+          quizHistoryDiv.innerHTML = '<p class="caption text-center" style="padding:12px;">No quizzes taken yet.</p>';
+        } else {
+          var html = "";
+          history.forEach(function(q) {
+            html += '<div class="card mt-8" style="padding:12px; box-shadow:none; border:1px solid var(--color-slate-light); display:flex; justify-content:space-between; align-items:center;">' +
+                    '<div><div style="font-weight:600; font-size:13px;">' + q.title + '</div><div class="caption">' + q.date + '</div></div>' +
+                    '<div class="badge badge-good">' + q.score + '%</div>' +
+                    '</div>';
+          });
+          quizHistoryDiv.innerHTML = html;
+        }
       }
     });
   });

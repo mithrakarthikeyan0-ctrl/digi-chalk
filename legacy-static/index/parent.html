@@ -27,8 +27,16 @@
 <div class="app-shell" data-loaded="false">
 
   <div class="topbar">
-    <h1 style="font-size:20px;">Your children</h1>
+    <div>
+      <h1 style="font-size:20px;">Your children</h1>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" data-global-search aria-label="Search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button class="btn-icon" data-global-notify aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+      <div class="avatar" data-global-profile tabindex="0" role="button" aria-label="Profile and Settings">P</div>
+    </div>
   </div>
+
 
   <div class="main">
 
@@ -63,8 +71,8 @@
         <div class="card score-hero" style="flex:1;">
           <p class="caption">Maths &mdash; unit test</p>
           <!-- INTEGRATION: weekly.averageScore or latest test score, read-only -->
-          <p style="font-size:28px; font-weight:700; margin-top:8px;">82<span style="font-size:13px; font-weight:400;">/100</span></p>
-          <p class="caption mt-8">Up 6 pts from last test</p>
+          <p style="font-size:28px; font-weight:700; margin-top:8px;" id="scoreHeroVal">82<span style="font-size:13px; font-weight:400;">/100</span></p>
+          <p class="caption mt-8" id="scoreHeroDelta">Up 6 pts from last test</p>
         </div>
         <div class="card" style="flex:1;">
           <h2 style="font-size:13px;">All test scores</h2>
@@ -73,21 +81,58 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2 style="font-size:14px;">Progress alerts</h2>
-        <p class="caption">Sent automatically, no login needed</p>
-        <div class="row mt-16" style="gap:10px; align-items:flex-start;">
-          <div class="msg-bubble" style="flex:1;">
-            <!-- INTEGRATION: notification.text, most recent entry -->
-            Aditi completed &ldquo;Fractions&rdquo; quiz &mdash; scored 4/5.
+      <!-- Phase 4: Weekly Attendance & Progress -->
+      <div class="row mt-16" style="gap:12px; margin-bottom:16px;">
+        <div class="card" style="flex:1;">
+          <h2 style="font-size:13px;">Weekly Attendance</h2>
+          <div class="row-between mt-8">
+            <span style="font-size:24px; font-weight:700; color:var(--color-emerald);" id="attendancePct">100%</span>
+            <span class="caption" id="attendanceDays">5/5 days</span>
           </div>
-          <div style="text-align:right; flex-shrink:0;">
-            <div class="caption" style="color:var(--color-emerald-dark); font-weight:700;">WhatsApp</div>
-            <div class="caption">2:14 pm</div>
+          <div class="bar-track mt-8"><div class="bar-fill good" id="attendanceBar" style="width:100%;"></div></div>
+        </div>
+        <div class="card" style="flex:1;">
+          <h2 style="font-size:13px;">Lesson Progress</h2>
+          <div class="row-between mt-8">
+            <span style="font-size:24px; font-weight:700; color:var(--color-indigo);" id="progressPct">80%</span>
+            <span class="caption" id="progressUnits">4/5 units</span>
           </div>
+          <div class="bar-track mt-8"><div class="bar-fill" id="progressBar" style="width:80%;"></div></div>
         </div>
       </div>
 
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <h2 style="font-size:14px;">Progress alerts</h2>
+            <p class="caption">Sent automatically, no login needed</p>
+          </div>
+          <button class="btn btn-outline" onclick="document.getElementById('teacherModal').style.display='flex';" style="padding:6px 12px; font-size:12px;">Contact Teacher</button>
+        </div>
+        <div id="parentAlertHistory" class="mt-16">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Phase 4: Contact Teacher Modal -->
+    <div id="teacherModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:100; align-items:center; justify-content:center;">
+      <div class="card" style="width:90%; max-width:400px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div class="row-between mb-16">
+          <h2>Message Teacher</h2>
+          <button class="btn-icon" onclick="document.getElementById('teacherModal').style.display='none';"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <textarea id="teacherMsgText" class="form-input mb-16" rows="4" placeholder="Type your message here..."></textarea>
+        <button class="btn btn-primary btn-block" onclick="
+          if(document.getElementById('teacherMsgText').value.trim()) {
+             document.getElementById('teacherModal').style.display='none';
+             document.getElementById('teacherMsgText').value='';
+             if (typeof showToast === 'function') showToast('Message sent to teacher', 'success');
+          } else {
+             if (typeof showToast === 'function') showToast('Please type a message', 'error');
+          }">Send Message</button>
+      </div>
     </div>
   </div>
 
@@ -151,17 +196,53 @@
         if (scoreHeroTitle) {
           scoreHeroTitle.textContent = data.subject + " — unit test";
         }
-        if (scoreHeroVal) {
-          scoreHeroVal.innerHTML = data.unitTestScore + '<span style="font-size:13px; font-weight:400;">/100</span>';
+        var scoreVal = document.getElementById("scoreHeroVal");
+        if (scoreVal) {
+          scoreVal.innerHTML = data.unitTestScore + '<span style="font-size:13px; font-weight:400;">/100</span>';
         }
-        if (scoreHeroDelta) {
-          scoreHeroDelta.textContent = data.scoreDelta;
+        var scoreDelta = document.getElementById("scoreHeroDelta");
+        if (scoreDelta) {
+          scoreDelta.textContent = data.scoreDelta;
         }
-        if (msgBubble) {
-          msgBubble.textContent = data.recentAlert;
+
+        // Phase 4 Update: Populate alerts history
+        var alertsHistory = document.getElementById("parentAlertHistory");
+        if (alertsHistory) {
+          var alertsHtml = "";
+          // Generate demo history based on current child
+          var alerts = [
+            { text: data.recentAlert, time: data.alertTime || "2:14 pm", channel: "WhatsApp" },
+            { text: (childKey === "aditi" ? "Aditi" : "Rohan") + " marked present for Science class.", time: "Yesterday, 9:00 am", channel: "SMS" }
+          ];
+          alerts.forEach(function(a) {
+             alertsHtml += '<div class="row mb-8" style="gap:10px; align-items:flex-start;">' +
+                           '<div class="msg-bubble" style="flex:1;">' + a.text + '</div>' +
+                           '<div style="text-align:right; flex-shrink:0;">' +
+                           '<div class="caption" style="color:var(--color-emerald-dark); font-weight:700;">' + a.channel + '</div>' +
+                           '<div class="caption">' + a.time + '</div></div></div>';
+          });
+          alertsHistory.innerHTML = alertsHtml;
         }
-        if (msgTime && data.alertTime) {
-          msgTime.textContent = data.alertTime;
+
+        // Phase 4 Update: Populate attendance and progress
+        if (childKey === "aditi") {
+          document.getElementById("attendancePct").textContent = "100%";
+          document.getElementById("attendanceDays").textContent = "5/5 days";
+          document.getElementById("attendanceBar").style.width = "100%";
+          document.getElementById("attendanceBar").className = "bar-fill good";
+          
+          document.getElementById("progressPct").textContent = "80%";
+          document.getElementById("progressUnits").textContent = "4/5 units";
+          document.getElementById("progressBar").style.width = "80%";
+        } else {
+          document.getElementById("attendancePct").textContent = "80%";
+          document.getElementById("attendanceDays").textContent = "4/5 days";
+          document.getElementById("attendanceBar").style.width = "80%";
+          document.getElementById("attendanceBar").className = "bar-fill warn";
+
+          document.getElementById("progressPct").textContent = "60%";
+          document.getElementById("progressUnits").textContent = "3/5 units";
+          document.getElementById("progressBar").style.width = "60%";
         }
 
         if (rows) {

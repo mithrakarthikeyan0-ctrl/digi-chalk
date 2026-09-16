@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
-package-lock.json
+dist/
+build/
 
 # Environment variables & local configuration
 .env

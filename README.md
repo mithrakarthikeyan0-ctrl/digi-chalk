@@ -11,13 +11,13 @@ Low-bandwidth classroom learning and collaborative whiteboard frontend designed 
 Digi-Chalk (Samarthya) bridges classroom chalkboards and student devices over low-bandwidth connections (such as 2G/EDGE networks). The interface prioritizes lightweight vector stroke telemetry over heavy video streaming, ensuring that students, teachers, parents, and school administrators can stay connected and informed even in rural or connectivity-challenged environments.
 
 ### Implemented Portals
-- **Teacher Portal (`index/teacher.html`)**: Live chalkboard session broadcasting, real-time classroom timer, interactive bookmarking of key explanations, and student score rollups.
-- **Student Portal (`index/student.html`)**: Subject filtering (Maths, Science, English, Social Studies), live session status card with "Join live board" action, low-bandwidth data saving mode, 30-second lecture condenser reels, and direct access to chapter replays and quizzes.
-- **Parent Portal (`index/parent.html`)**: Multi-child switcher, multilingual daily learning digests (English and Tamil), score breakdowns, and delivery logs for SMS/WhatsApp notices.
-- **Headmaster Portal (`index/headmaster.html`)**: School-wide performance rollups, class sortability (by score or interaction level), engagement tracking, and attention flags.
-- **Live Board (`index/board.html`)**: Fullscreen landscape chalkboard view shared by teachers and students via `?role=teacher` or `?role=student`, featuring orientation protection and chalk drawing simulation.
-- **AI Quiz Flow (`index/quiz.html`)**: Single-question assessment flow with step progress indicators, selection validation, score tallying (`n / 3`), performance breakdown, and retake capability.
-- **Whiteboard Replay (`index/replay.html`)**: Synced stroke replay with interactive playhead scrubbing, keyboard timeline navigation, teacher bookmark quick-jump points, and low-data modes.
+- **Teacher Portal (`/teacher`)**: Live chalkboard session broadcasting, real-time classroom timer, interactive bookmarking of key explanations, and student score rollups.
+- **Student Portal (`/student`)**: Subject filtering (Maths, Science, English, Social Studies), live session status card with "Join live board" action, low-bandwidth data saving mode, 30-second lecture condenser reels, and direct access to chapter replays and quizzes.
+- **Parent Portal (`/parent`)**: Multi-child switcher, multilingual daily learning digests (English and Tamil), score breakdowns, and delivery logs for SMS/WhatsApp notices.
+- **Headmaster Portal (`/headmaster`)**: School-wide performance rollups, class sortability (by score or interaction level), engagement tracking, and attention flags.
+- **Live Board (`/board`)**: Fullscreen landscape chalkboard view shared by teachers and students via `?role=teacher` or `?role=student`, featuring orientation protection and chalk drawing simulation.
+- **AI Quiz Flow (`/quiz`)**: Single-question assessment flow with step progress indicators, selection validation, score tallying (`n / 3`), performance breakdown, and retake capability.
+- **Whiteboard Replay (`/replay`)**: Synced stroke replay with interactive playhead scrubbing, keyboard timeline navigation, teacher bookmark quick-jump points, and low-data modes.
 
 ---
 
@@ -34,11 +34,12 @@ Digi-Chalk (Samarthya) bridges classroom chalkboards and student devices over lo
 
 ## Technology Stack
 
-- **Structure**: Semantic HTML5
-- **Styling**: Vanilla CSS (design tokens, paper texture system, mobile-first responsive layout, no external CSS frameworks)
-- **Logic**: Vanilla JavaScript (ES6+, zero frontend frameworks, component-based structure)
+- **Framework**: React with Vite
+- **Routing**: React Router
+- **State Management**: React Context (`AppContext`)
+- **Styling**: Modular CSS (`tokens.css`, `globals.css`)
 - **Graphics**: HTML5 Canvas API for vector stroke rendering
-- **Testing**: Playwright for end-to-end smoke and interaction verification
+- **Testing**: Vitest for unit testing
 
 ---
 
@@ -46,31 +47,22 @@ Digi-Chalk (Samarthya) bridges classroom chalkboards and student devices over lo
 
 ```
 Digi_Chalk/
-├── assets/
-│   ├── fonts/                  # Font assets (Plus Jakarta Sans fallback stack)
-│   └── icons/                  # SVG icons and visual symbols
-├── index/
-│   ├── index.html              # Role selection & login landing page
-│   ├── teacher.html            # Teacher session & board controls
-│   ├── student.html            # Student dashboard & subject lessons
-│   ├── parent.html             # Parent multi-child learning digests
-│   ├── headmaster.html         # Headmaster school analytics & class ranking
-│   ├── board.html              # Fullscreen landscape live chalkboard view
-│   ├── quiz.html               # One-question-at-a-time AI quiz flow
-│   └── replay.html             # Synced whiteboard replay with bookmarks
-├── templates/
-│   ├── style.css               # Design tokens, color system, and shared styles
-│   ├── script.js               # Shared logic (modals, loaders, switches, announcer)
-│   └── components/
-│       ├── live-board.js       # Chalkboard canvas stroke rendering & session state
-│       ├── quiz.js             # Quiz progression, validation, scoring, and retake
-│       ├── condenser.js        # 30-second lecture condenser playback & completion
-│       └── scores.js           # Score classifying, bars, and admin class sorting
-├── test-runner.js              # Playwright cross-browser interaction test runner
-├── smoketest.js                # Playwright smoke test script
-├── interaction-test.js         # Playwright interaction test script
-├── HANDOFF.md                  # Comprehensive backend handoff guide & data contracts
-├── .gitignore                  # Git hygiene ignore rules
+├── frontend/
+│   ├── public/                 # Static assets
+│   ├── src/
+│   │   ├── components/         # Reusable UI Atoms and Layouts
+│   │   ├── context/            # Global State Management
+│   │   ├── data/               # Mock Demo Data
+│   │   ├── pages/              # Role Portals and Features
+│   │   ├── styles/             # Global and Modular CSS
+│   │   ├── App.jsx             # React Router setup
+│   │   └── main.jsx            # Entry point
+│   ├── vite.config.js          # Vite configuration
+│   └── package.json            # Dependencies
+├── legacy-static/              # Old static HTML/JS frontend
+├── backend/                    # Django Cloud Backend
+├── gateway/                    # FastAPI Classroom Gateway
+├── HANDOFF.md                  # Backend handoff guide & data contracts
 └── README.md                   # Repository documentation
 ```
 
@@ -78,33 +70,32 @@ Digi_Chalk/
 
 ## Local Setup
 
-No build step or compilation required. Run locally using any static web server:
+Navigate to the `frontend/` directory, install dependencies, and run the development server:
 
 ```bash
-# Using live-server (recommended)
-npx live-server index --port=5173
-
-# Or using Python's built-in HTTP server
-python -m http.server 5173
+cd frontend
+npm install
+npm run dev
 ```
 
-Then open `http://localhost:5173/index/index.html` in your browser. Every page can also be opened standalone (e.g. `index/student.html`).
+Then open `http://localhost:5173` in your browser.
 
 ---
 
 ## Testing
 
-Automated verification is built with Playwright:
+Automated verification is built with Vitest:
 
-- **`test-runner.js` / `interaction-test.js`**: Verifies teacher session start/timer, bookmarking, student subject chips, low-bandwidth toggle, condenser playback progress, quiz validation and scoring (`n / 3`), parent child switcher, admin sorting, board landscape guard, and replay bookmark jump.
-- **`smoketest.js`**: Verifies that all 9 portal pages load cleanly without uncaught console errors or 404 resource failures.
-
-To run tests:
+- Run tests:
 ```bash
-node test-runner.js
+cd frontend
+npm run test
 ```
 
-*Note*: Ensure a local server is running at port `8123` (or the configured `BASE` URL) prior to running tests. On Windows environments, Edge or Chromium is used as the browser channel.
+- Run build:
+```bash
+npm run build
+```
 
 ---
 

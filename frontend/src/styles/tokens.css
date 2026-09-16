@@ -1,0 +1,46 @@
+:root {
+  /* brand palette */
+  --color-indigo: #0F172A;
+  --color-indigo-soft: #1E293B;
+  --color-emerald: #10B981;
+  --color-emerald-dark: #047857;
+  --color-amber: #D97706;
+  --color-crimson: #DC2626;
+  --color-slate: #475569;
+  --color-slate-light: #E2E8F0;
+
+  /* board / chalk (dark canvas, used only inside board windows) */
+  --board-bg: #0D2C22;
+  --board-bg-alt: #0F172A;
+  --chalk-white: #F1F5F9;
+  --chalk-yellow: #FCD34D;
+  --chalk-mint: #6EE7B7;
+
+  /* paper surfaces */
+  --paper-0: #EFEAE0;   /* page bg, outside the "device" */
+  --paper-1: #FBF8F2;   /* app surface */
+  --paper-2: #FFFFFF;   /* raised card */
+  --paper-dim: #F3EFE6;
+
+  /* semantic text */
+  --text-primary: var(--color-indigo);
+  --text-secondary: var(--color-slate);
+  --text-oninverse: var(--paper-1);
+
+  /* type */
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-h1: 32px;
+  --fs-h2: 20px;
+  --fs-body: 14px;
+  --fs-caption: 11px;
+
+  /* layout */
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --max-width: 430px;
+  --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-raised: 0 10px 24px rgba(15, 23, 42, 0.15);
+  --shadow-hover: 0 6px 16px rgba(15, 23, 42, 0.12);
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}

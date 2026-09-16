@@ -55,6 +55,12 @@
         <button type="button" class="chalk-btn chalk-yellow" data-color="#FCD34D" aria-label="Yellow chalk" title="Yellow chalk"></button>
         <button type="button" class="chalk-btn chalk-mint" data-color="#6EE7B7" aria-label="Mint chalk" title="Mint chalk"></button>
       </div>
+      <button class="board-icon-btn" id="boardSizeBtn" aria-label="Toggle stroke size" title="Stroke size">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+      </button>
+      <button class="board-icon-btn" id="boardUndoBtn" aria-label="Undo last stroke" title="Undo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+      </button>
       <button class="board-icon-btn" id="boardClearBtn" aria-label="Clear board" title="Clear board">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
@@ -87,6 +93,7 @@
       initBookmarkButton(document.getElementById("boardBookmarkBtn"), document.getElementById("boardTimer"), null);
 
       var activeChalkColor = "#F1F5F9";
+      var activeChalkSize = 2.5;
       var chalkBtns = document.querySelectorAll(".chalk-btn");
       chalkBtns.forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -100,14 +107,50 @@
       var clearBtn = document.getElementById("boardClearBtn");
       if (clearBtn && canvas) {
         clearBtn.addEventListener("click", function () {
-          var ctx = canvas.getContext("2d");
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          announce("Board cleared");
+          if (confirm("Clear the entire board?")) {
+            var ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            window.localStrokes = [];
+            announce("Board cleared");
+          }
+        });
+      }
+
+      var undoBtn = document.getElementById("boardUndoBtn");
+      if (undoBtn && canvas) {
+        undoBtn.addEventListener("click", function() {
+          if (window.localStrokes && window.localStrokes.length > 0) {
+             window.localStrokes.pop();
+             var ctx = canvas.getContext("2d");
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+             var ratio = window.devicePixelRatio || 1;
+             ctx.save();
+             ctx.scale(ratio, ratio);
+             ctx.lineCap = "round";
+             ctx.lineJoin = "round";
+             window.localStrokes.forEach(function(s) {
+                 var p = new Path2D(s.pathStr);
+                 ctx.strokeStyle = s.color;
+                 ctx.lineWidth = s.size || 2.5;
+                 ctx.stroke(p);
+             });
+             ctx.restore();
+             announce("Stroke undone");
+          }
+        });
+      }
+
+      var sizeBtn = document.getElementById("boardSizeBtn");
+      if (sizeBtn) {
+        sizeBtn.addEventListener("click", function() {
+           activeChalkSize = activeChalkSize === 2.5 ? 6.0 : 2.5;
+           sizeBtn.style.color = activeChalkSize === 6.0 ? "var(--color-emerald)" : "";
+           announce("Stroke size changed");
         });
       }
 
       if (canvas && typeof enableBoardDrawing === "function") {
-        enableBoardDrawing(canvas, function () { return activeChalkColor; });
+        enableBoardDrawing(canvas, function () { return activeChalkColor; }, function() { return activeChalkSize; });
       }
     } else {
       document.getElementById("studentControls").style.display = "flex";
@@ -131,46 +174,17 @@
     }, 1000);
 
     // WebSocket Integration
+    // Demo Integration
     var sessionId = new URLSearchParams(window.location.search).get("session_id") || window.currentSessionId;
-    if (sessionId) {
-      // Clear demo strokes
-      var liveStrokes = [];
-      drawBoardStrokes(canvas, liveStrokes);
-      
-      window.boardSocket = new BoardSocket(sessionId, {
-        onStatus: function(status) {
-          console.log("WS Status:", status);
-          if (status === "Connected") {
-            document.querySelector(".rec-dot").classList.add("live");
-          } else {
-            document.querySelector(".rec-dot").classList.remove("live");
-          }
-        },
-        onMessage: function(msg) {
-          if (msg.type === "stroke") {
-            // Reconstruct path from points for simplicity (we're mapping points back to SVG path)
-            if (msg.points && msg.points.length > 0) {
-              var color = msg.points[0].color;
-              var pathStr = "M " + msg.points.map(p => `${p.x} ${p.y}`).join(" L ");
-              liveStrokes.push({ path: pathStr, color: color });
-              drawBoardStrokes(canvas, liveStrokes);
-            }
-          } else if (msg.type === "board_cleared") {
-            liveStrokes = [];
-            drawBoardStrokes(canvas, liveStrokes);
-          }
-        },
-        onError: function(err) {
-          console.error("BoardSocket Error:", err);
-        }
-      });
-      
-      window.addEventListener("beforeunload", function() {
-        if (window.boardSocket) window.boardSocket.disconnect();
-      });
+    if (role === "student") {
+      // For student, animate the teacher's strokes drawing over 5 seconds
+      if (typeof animateBoardStrokes === "function") {
+        animateBoardStrokes(canvas, null, 5000);
+      }
+      document.querySelector(".rec-dot").classList.add("live");
     } else {
-      // Demo fallback
-      console.log("No session ID found, running in demo mode");
+      // For teacher, just draw the initial state or leave empty for them to draw
+      document.querySelector(".rec-dot").classList.add("live");
     }
   });
 </script>

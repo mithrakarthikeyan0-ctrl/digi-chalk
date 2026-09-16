@@ -138,30 +138,73 @@ function initQuiz(rootEl) {
       var isCorrect = selected === q.correctOptionId;
       if (isCorrect) score += 1;
 
-      studentAnswers.push({
-        questionId: q.id,
-        prompt: q.prompt,
-        selectedId: selected,
-        correctId: q.correctOptionId,
-        isCorrect: isCorrect,
-        explanation: q.explanation
-      });
+      // Visual feedback before advancing
+      var selectedBtn = optionsEl.querySelector('[data-option-id="' + selected + '"]');
+      if (selectedBtn) {
+        if (isCorrect) {
+          selectedBtn.style.background = "#D1FAE5";
+          selectedBtn.style.borderColor = "#10B981";
+          selectedBtn.style.color = "#065F46";
+          if (typeof showToast === "function") showToast("Correct!", "success");
+        } else {
+          selectedBtn.style.background = "#FEE2E2";
+          selectedBtn.style.borderColor = "#EF4444";
+          selectedBtn.style.color = "#991B1B";
+          var correctBtn = optionsEl.querySelector('[data-option-id="' + q.correctOptionId + '"]');
+          if (correctBtn) {
+            correctBtn.style.background = "#D1FAE5";
+            correctBtn.style.borderColor = "#10B981";
+          }
+          if (typeof showToast === "function") showToast("Incorrect", "error");
+        }
+      }
 
-      if (current < QUIZ_DEMO.length - 1) {
-        current += 1;
-        renderQuestion();
-      } else {
+      nextBtn.disabled = true;
+
+      setTimeout(function() {
+        studentAnswers.push({
+          questionId: q.id,
+          prompt: q.prompt,
+          selectedId: selected,
+          correctId: q.correctOptionId,
+          isCorrect: isCorrect,
+          explanation: q.explanation
+        });
+
+        nextBtn.disabled = false;
+
+        if (current < QUIZ_DEMO.length - 1) {
+          current += 1;
+          renderQuestion();
+        } else {
+          showResults();
+        }
+      }, 1200);
+    });
+  }
+
+  function showResults() {
+    if (bodyEl) bodyEl.style.display = "none";
+    if (progressEl) progressEl.style.display = "none";
+    if (resultEl) resultEl.style.display = "block";
         /* INTEGRATION: POST the final score & answers to the results endpoint
            so it feeds into Teacher.scores and Headmaster.classes.
            Endpoint: POST /api/quiz/{lessonId}/attempts
            Payload: { studentId: "aditi", score: score, total: QUIZ_DEMO.length, answers: studentAnswers }
         */
-        if (bodyEl) bodyEl.style.display = "none";
-        if (progressEl) progressEl.style.display = "none";
-        if (resultEl) resultEl.style.display = "block";
-
         if (scoreEl) {
           scoreEl.textContent = score + " / " + QUIZ_DEMO.length;
+        }
+
+        // Phase 4: Storage Integration
+        if (typeof LocalDB !== "undefined") {
+          var history = LocalDB.get("quiz_history", []);
+          history.unshift({
+            title: "Maths: Fractions Quiz",
+            date: new Date().toLocaleDateString(),
+            score: Math.round((score / QUIZ_DEMO.length) * 100)
+          });
+          LocalDB.set("quiz_history", history.slice(0, 5));
         }
 
         if (verdictEl) {
@@ -196,8 +239,6 @@ function initQuiz(rootEl) {
         if (typeof announce === "function") {
           announce("Quiz finished. You scored " + score + " out of " + QUIZ_DEMO.length);
         }
-      }
-    });
   }
 
   var retakeBtn = rootEl.querySelector("[data-quiz-retake]");

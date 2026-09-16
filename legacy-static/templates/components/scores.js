@@ -13,17 +13,20 @@ function renderScoreRow(container, item) {
   var row = document.createElement("div");
   row.className = "mt-16";
   row.innerHTML =
-    '<div class="row-between"><span style="font-size:12px;color:var(--text-primary)">' +
+    '<div class="row-between"><span style="font-size:13px;color:var(--text-primary); font-weight:600;">' +
     item.label +
-    '</span><span class="caption">' +
+    '</span><span class="caption" style="font-weight:500;">' +
     item.meta +
     "</span></div>" +
-    '<div class="bar-track mt-8"><div class="bar-fill ' +
+    '<div class="bar-track mt-8" style="overflow:hidden;"><div class="bar-fill ' +
     scoreBarClass(item.value) +
-    '" style="width:' +
-    item.value +
-    '%"></div></div>';
+    '" style="width:0%; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);"></div></div>';
   container.appendChild(row);
+
+  setTimeout(function() {
+    var fill = row.querySelector(".bar-fill");
+    if (fill) fill.style.width = item.value + "%";
+  }, 50);
 }
 
 /**
@@ -51,22 +54,25 @@ function renderClassList(container, classes) {
       ? '<span class="badge ' + (band === "low" ? "badge-low" : "badge-warn") + '">' + c.flag + "</span>"
       : '<span class="badge badge-good">on track</span>';
     card.innerHTML =
-      '<div class="row-between"><h2>' +
+      '<div class="row-between"><h2 style="font-size:15px; font-weight:700;">' +
       c.id +
       "</h2>" +
       badge +
       "</div>" +
-      '<p class="caption mt-8">Score ' +
+      '<p class="caption mt-8" style="font-weight:500;">Score ' +
       c.avgScore +
       "% &middot; Engagement " +
       c.interaction +
       "%</p>" +
-      '<div class="bar-track mt-8"><div class="bar-fill ' +
+      '<div class="bar-track mt-12" style="overflow:hidden;"><div class="bar-fill ' +
       band +
-      '" style="width:' +
-      c.avgScore +
-      '%"></div></div>';
+      '" style="width:0%; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);"></div></div>';
     container.appendChild(card);
+
+    setTimeout(function() {
+      var fill = card.querySelector(".bar-fill");
+      if (fill) fill.style.width = c.avgScore + "%";
+    }, 50);
   });
 }
 

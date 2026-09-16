@@ -8,11 +8,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../templates/style.css" />
 <style>
-  .rollup { background: var(--color-indigo); border-color: var(--color-indigo); display: flex; }
-  .rollup .rollup-stat { flex: 1; }
-  .rollup .caption { color: #CBD5C9; }
-  .rollup .stat { font-size: 28px; font-weight: 700; margin-top: 6px; }
-  .rollup .divider { flex: none; width: 1px; align-self: stretch; background: #334155; margin: 4px 16px; }
+  .rollup { background: linear-gradient(135deg, var(--color-indigo), #312E81); border:none; display: flex; box-shadow: var(--shadow-md); color: #FBF8F2; padding: 20px;}
+  .rollup .rollup-stat { flex: 1; text-align: center; }
+  .rollup .caption { color: #E2E8F0; font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;}
+  .rollup .stat { font-size: 36px; font-weight: 800; margin-top: 8px; letter-spacing: -0.5px; }
+  .rollup .divider { flex: none; width: 1px; align-self: stretch; background: rgba(255,255,255,0.2); margin: 4px 16px; }
   .sort-row { display: flex; gap: 10px; align-items: center; }
   select.sort-select {
     flex: 1; padding: 10px 14px; border-radius: var(--radius-pill);
@@ -31,6 +31,11 @@
       <!-- INTEGRATION: school.name -->
       <p class="role-label">Sunrise Public School</p>
     </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" data-global-search aria-label="Search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button class="btn-icon" data-global-notify aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+      <div class="avatar" data-global-profile tabindex="0" role="button" aria-label="Profile and Settings">HM</div>
+    </div>
   </div>
 
   <div class="main">
@@ -44,8 +49,22 @@
 
     <div class="real-content">
 
+      <!-- Phase 4: Date Range & Export -->
+      <div class="row-between mb-16">
+        <select class="form-input" style="width:auto; padding:6px 12px; font-size:12px; border-radius:12px;" aria-label="Select date range">
+          <option>This Week</option>
+          <option>Last Week</option>
+          <option>This Month</option>
+          <option>Year to Date</option>
+        </select>
+        <button class="btn btn-outline" onclick="if(typeof showToast==='function') showToast('Exporting summary to CSV...', 'success');" style="padding:6px 12px; font-size:12px; min-height:auto; display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+
       <!-- INTEGRATION: GET /api/schools/{schoolId} -> school.avgScore, school.avgInteraction -->
-      <div class="card rollup">
+      <div class="card rollup mb-16" style="border-radius:12px;">
         <div class="rollup-stat">
           <p class="caption">Overall average score</p>
           <p class="stat" style="color:var(--color-emerald);">76%</p>
@@ -54,6 +73,28 @@
         <div class="rollup-stat">
           <p class="caption">Overall engagement</p>
           <p class="stat" style="color:var(--color-amber);">68%</p>
+        </div>
+      </div>
+
+      <!-- Phase 4: Class Comparison Chart -->
+      <div class="card mb-16">
+        <h2 style="font-size:14px; margin-bottom:12px;">Top Performing Classes (Score)</h2>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="row" style="gap:8px;">
+            <div style="width:30px; font-size:12px; font-weight:600; color:var(--text-secondary);">8B</div>
+            <div class="bar-track" style="flex:1; background:var(--paper-dim); height:12px; border-radius:6px;"><div class="bar-fill good" style="width:85%; border-radius:6px;"></div></div>
+            <div style="width:30px; font-size:12px; font-weight:700; text-align:right;">85%</div>
+          </div>
+          <div class="row" style="gap:8px;">
+            <div style="width:30px; font-size:12px; font-weight:600; color:var(--text-secondary);">9A</div>
+            <div class="bar-track" style="flex:1; background:var(--paper-dim); height:12px; border-radius:6px;"><div class="bar-fill good" style="width:78%; border-radius:6px;"></div></div>
+            <div style="width:30px; font-size:12px; font-weight:700; text-align:right;">78%</div>
+          </div>
+          <div class="row" style="gap:8px;">
+            <div style="width:30px; font-size:12px; font-weight:600; color:var(--text-secondary);">7C</div>
+            <div class="bar-track" style="flex:1; background:var(--paper-dim); height:12px; border-radius:6px;"><div class="bar-fill" style="width:65%; background:var(--color-indigo); border-radius:6px;"></div></div>
+            <div style="width:30px; font-size:12px; font-weight:700; text-align:right;">65%</div>
+          </div>
         </div>
       </div>
 
